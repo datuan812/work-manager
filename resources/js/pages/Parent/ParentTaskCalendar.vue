@@ -25,24 +25,6 @@ const quickModes = [
     ["weekdays", "Thứ 2-6"],
     ["weekends", "Cuối tuần"],
 ];
-const quickStartDisplay = computed({
-    get: () => formatDate(quickRange.value.start),
-    set: (value) => {
-        quickRange.value = {
-            ...quickRange.value,
-            start: parseDisplayDate(value) || quickRange.value.start,
-        };
-    },
-});
-const quickEndDisplay = computed({
-    get: () => formatDate(quickRange.value.end),
-    set: (value) => {
-        quickRange.value = {
-            ...quickRange.value,
-            end: parseDisplayDate(value) || quickRange.value.end,
-        };
-    },
-});
 
 const monthStartKey = computed(() =>
     dateKey(
@@ -543,9 +525,8 @@ onMounted(async () => {
                         >Từ ngày</span
                     >
                     <input
-                        v-model="quickStartDisplay"
-                        type="text"
-                        inputmode="numeric"
+                        v-model="quickRange.start"
+                        type="date"
                         placeholder="dd/mm/yyyy"
                         class="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900"
                     />
@@ -556,9 +537,8 @@ onMounted(async () => {
                         >Đến ngày</span
                     >
                     <input
-                        v-model="quickEndDisplay"
-                        type="text"
-                        inputmode="numeric"
+                        v-model="quickRange.end"
+                        type="date"
                         placeholder="dd/mm/yyyy"
                         class="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900"
                     />
