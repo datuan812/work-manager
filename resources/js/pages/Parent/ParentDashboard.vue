@@ -29,7 +29,7 @@ onMounted(() => parent.loadDashboard())
                         <h2 class="text-xl font-bold">{{ child.name }}</h2>
                     </div>
                     <span class="rounded-full px-3 py-1 text-xs font-bold" :class="child.is_active ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100' : 'bg-slate-100 text-slate-500'">
-                        {{ child.is_active ? 'Active' : 'Inactive' }}
+                        {{ child.is_active ? 'Hoạt động' : 'Không hoạt động' }}
                     </span>
                 </div>
                 <p class="mt-5 text-sm font-bold text-slate-600">{{ child.today_completed }} / {{ child.today_total }} nhiệm vụ hoàn thành</p>

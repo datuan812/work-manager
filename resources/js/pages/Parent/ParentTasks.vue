@@ -75,7 +75,7 @@ onMounted(async () => {
                         </p>
                     </div>
                     <div class="mt-4 grid grid-cols-2 gap-3">
-                        <BaseInput v-model="form.title" label="Title" /><BaseInput
+                        <BaseInput v-model="form.title" label="Tên nhiệm vụ" /><BaseInput
                             v-model="form.icon"
                             label="Icon"
                         />
@@ -83,12 +83,12 @@ onMounted(async () => {
                     <div class="mt-4 grid grid-cols-2 gap-3">
                         <BaseInput
                             v-model="form.points"
-                            label="Points"
+                            label="Điểm thưởng"
                             type="number"
                         /><label class="block"
                             ><span
                                 class="mb-1 block text-xs font-bold uppercase text-slate-500"
-                                >Category</span
+                                >Danh mục</span
                             ><select
                                 v-model="form.category_id"
                                 class="min-h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-semibold"
@@ -111,10 +111,10 @@ onMounted(async () => {
                     >
                     <div class="mt-5 flex gap-2">
                         <BaseButton type="submit">{{
-                            form.id ? "Update" : "Create"
+                            form.id ? "Cập nhật" : "Tạo mới"
                         }}</BaseButton
                         ><BaseButton variant="secondary" @click="reset"
-                            >Clear</BaseButton
+                            >Xóa</BaseButton
                         >
                     </div>
                 </form>
@@ -132,7 +132,7 @@ onMounted(async () => {
                     :key="task.id"
                     class="admin-card p-4"
                 >
-                    <div class="flex items-start justify-between gap-3">
+                    <div class="flex items-center justify-between gap-3">
                         <div class="min-w-0">
                             <div class="flex items-center gap-3">
                                 <span
@@ -148,6 +148,7 @@ onMounted(async () => {
                                             task.category?.name || "No category"
                                         }}
                                     </p>
+                                    <span :class="task.is_active ? 'bg-green-500' : 'bg-orange-500'" class="text-white px-2 py-1 text-xs rounded-full mt-1">{{ task.is_active ? 'Hoạt động' : 'Không hoạt động' }}</span>
                                 </div>
                             </div>
                         </div>

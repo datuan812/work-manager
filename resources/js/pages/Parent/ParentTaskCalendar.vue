@@ -587,9 +587,13 @@ onMounted(async () => {
                     @click="selectCurrentMonth"
                     >Chọn cả tháng</BaseButton
                 >
-                <BaseButton variant="secondary" @click="clearSelectedDates"
-                    >❌ Bỏ chọn</BaseButton
+                <BaseButton
+                    variant="danger"
+                    class="!bg-red-100 !text-red-500 !border-red-300 hover:!bg-red-200"
+                    @click="clearSelectedDates"
                 >
+                    ❌ Bỏ chọn
+                </BaseButton>
             </div>
 
             <div class="grid grid-cols-7 border-b border-slate-200 bg-slate-50">

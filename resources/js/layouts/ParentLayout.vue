@@ -55,7 +55,7 @@ async function logout() {
                     v-for="{ to, label, icon } in links"
                     :key="to"
                     :to="to"
-                    class="group flex min-h-11 shrink-0 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-extrabold text-slate-300 transition hover:bg-white/8 hover:text-white lg:w-full"
+                    class="group flex min-h-11 shrink-0 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold text-slate-300 transition hover:bg-white/8 hover:text-white lg:w-full"
                     :class="sidebarCollapsed ? 'lg:justify-center lg:px-0' : ''"
                     active-class="bg-white text-slate-950 shadow-sm hover:bg-white hover:text-slate-950"
                     :title="label"
@@ -69,7 +69,7 @@ async function logout() {
             <div class="mt-auto hidden border-t border-white/10 pt-5 lg:block">
                   <button
                     type="button"
-                    class=" mb-3 flex min-h-10 w-full items-center justify-center gap-2 rounded-xl border border-white/10 text-sm font-bold text-slate-300 transition hover:bg-white/10 hover:text-white"
+                    class=" mb-3 flex min-h-10 w-full items-center justify-center gap-2 rounded-xl border border-white/10 text-sm font-bold text-slate-300 transition bg-white/20 hover:bg-white/10 hover:text-white"
                     :title="sidebarCollapsed ? 'Mở rộng sidebar' : 'Thu gọn sidebar'"
                     @click="sidebarCollapsed = !sidebarCollapsed"
                 >

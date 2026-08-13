@@ -15,8 +15,27 @@ const fileInput = ref(null)
 const form = reactive({ id: null, name: '', avatar: '', avatar_file: null, avatar_preview: '', date_of_birth: '', is_active: true })
 const previewAvatar = computed(() => form.avatar_preview || form.avatar)
 
+function normalizeDate(value) {
+    if (!value) return ''
+
+    const date = String(value)
+
+    if (/^\d{4}-\d{2}-\d{2}/.test(date)) {
+        return date.slice(0, 10)
+    }
+
+    const match = date.match(/^(\d{2})\/(\d{2})\/(\d{4})$/)
+
+    if (match) {
+        const [, day, month, year] = match
+        return `${year}-${month}-${day}`
+    }
+
+    return ''
+}
+
 function edit(child) {
-    Object.assign(form, { id: child.id, name: child.name, avatar: child.avatar || '', avatar_file: null, avatar_preview: '', date_of_birth: child.date_of_birth || '', is_active: child.is_active })
+    Object.assign(form, { id: child.id, name: child.name, avatar: child.avatar || '', avatar_file: null, avatar_preview: '', date_of_birth: normalizeDate(child.date_of_birth) || '', is_active: child.is_active })
     if (fileInput.value) fileInput.value.value = ''
 }
 function reset() {
@@ -30,14 +49,14 @@ function chooseAvatar(event) {
 }
 async function save() {
     await parent.saveChild(form)
-    toast.show('Đã lưu child')
+    toast.show('Đã lưu hồ sơ bé')
     reset()
 }
 async function remove(id) {
     if (!window.confirm('Bạn có chắc muốn xóa hồ sơ bé này?')) return
 
     await parent.deleteChild(id)
-    toast.show('Đã xóa child')
+    toast.show('Đã xóa hồ sơ bé')
 }
 function formatDate(value) {
     if (!value) return '—'
@@ -62,7 +81,7 @@ onMounted(() => parent.loadChildren())
                 <div class="mb-5">
                     <h2 class="text-lg font-bold">{{ form.id ? 'Cập nhật hồ sơ' : 'Thêm bé mới' }}</h2>
                 </div>
-                <BaseInput v-model="form.name" label="Name" />
+                <BaseInput v-model="form.name" label="Tên" />
                 <div class="mt-4 flex items-center gap-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-4">
                     <AvatarPhoto :src="previewAvatar" :name="form.name" size="lg" />
                     <label class="min-w-0 flex-1">
@@ -71,16 +90,16 @@ onMounted(() => parent.loadChildren())
                     </label>
                 </div>
                 <div class="mt-4">
-                    <BaseInput v-model="form.date_of_birth" label="Birth date" type="date" />
+                    <BaseInput v-model="form.date_of_birth" label="Ngày sinh" type="date" />
                 </div>
                 <label class="mt-4 flex min-h-11 items-center gap-2 text-sm font-bold"><input v-model="form.is_active" type="checkbox" /> Hiển thị</label>
-                <div class="mt-5 flex gap-2"><BaseButton type="submit">{{ form.id ? 'Update' : 'Create' }}</BaseButton><BaseButton variant="secondary" @click="reset">Clear</BaseButton></div>
+                <div class="mt-5 flex gap-2"><BaseButton type="submit">{{ form.id ? 'Cập nhật' : 'Tạo mới' }}</BaseButton><BaseButton variant="secondary" @click="reset">Xóa</BaseButton></div>
             </form>
             <LoadingState v-if="parent.loadingStates.children && !parent.children.length" title="Đang tải hồ sơ bé" message="Danh sách hồ sơ sẽ hiện sau khi tải xong." :rows="5" />
 
             <div v-else class="admin-card overflow-hidden">
                 <table class="admin-table">
-                    <thead><tr><th>Child</th><th>DOB</th><th>Status</th><th></th></tr></thead>
+                    <thead><tr><th>Tên</th><th>Ngày sinh</th><th>Trạng thái</th><th></th></tr></thead>
                     <tbody>
                         <tr v-for="child in parent.children" :key="child.id">
                             <td>

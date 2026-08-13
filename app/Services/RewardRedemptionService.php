@@ -21,7 +21,7 @@ class RewardRedemptionService
 
         return DB::transaction(function () use ($child, $reward): RewardRedemption {
             if ($this->points->balance($child) < $reward->required_points) {
-                throw ValidationException::withMessages(['points' => 'Not enough points for this reward.']);
+                throw ValidationException::withMessages(['points' => 'Không đủ điểm để đổi phần thưởng này.']);
             }
 
             $redemption = RewardRedemption::create([

@@ -37,11 +37,11 @@ onMounted(() => parent.loadRewards())
                         <h2 class="text-lg font-bold">{{ form.id ? 'Cập nhật phần thưởng' : 'Tạo phần thưởng' }}</h2>
                         <p class="mt-1 text-sm font-semibold text-slate-500">Quy đổi điểm thành phần thưởng cụ thể cho bé.</p>
                     </div>
-                    <BaseInput v-model="form.title" label="Title" />
-                    <div class="mt-4 grid grid-cols-2 gap-3"><BaseInput v-model="form.icon" label="Icon" /><BaseInput v-model="form.required_points" label="Points" type="number" /></div>
-                    <BaseInput v-model="form.description" class="mt-4" label="Description" />
+                    <BaseInput v-model="form.title" label="Tên phần thưởng" />
+                    <div class="mt-4 grid grid-cols-2 gap-3"><BaseInput v-model="form.icon" label="Icon" /><BaseInput v-model="form.required_points" label="Điểm cần thiết" type="number" /></div>
+                    <BaseInput v-model="form.description" class="mt-4" label="Mô tả" />
                     <label class="mt-4 flex min-h-11 items-center gap-2 text-sm font-bold"><input v-model="form.is_active" type="checkbox" /> Hiển thị</label>
-                    <div class="mt-5 flex gap-2"><BaseButton type="submit">{{ form.id ? 'Update' : 'Create' }}</BaseButton><BaseButton variant="secondary" @click="reset">Clear</BaseButton></div>
+                    <div class="mt-5 flex gap-2"><BaseButton type="submit">{{ form.id ? 'Cập nhật' : 'Tạo mới' }}</BaseButton><BaseButton variant="secondary" @click="reset">Xóa</BaseButton></div>
                 </form>
             </div>
             <LoadingState v-if="parent.loadingStates.rewards && !parent.rewards.length" title="Đang tải phần thưởng" message="Danh sách phần thưởng đang được cập nhật." :rows="4" />
@@ -50,7 +50,7 @@ onMounted(() => parent.loadRewards())
                 <article v-for="reward in parent.rewards" :key="reward.id" class="admin-card p-5">
                     <div class="flex items-start justify-between gap-4">
                         <span class="grid h-12 w-12 place-items-center rounded-xl bg-amber-50 text-2xl">{{ reward.icon }}</span>
-                        <span class="rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700">{{ reward.required_points }} points</span>
+                        <span class="rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700">{{ reward.required_points }} điểm</span>
                     </div>
                     <h2 class="mt-4 font-bold">{{ reward.title }}</h2>
                     <p class="mt-1 text-sm font-semibold leading-6 text-slate-500">{{ reward.description }}</p>
