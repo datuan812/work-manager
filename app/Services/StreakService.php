@@ -11,7 +11,7 @@ class StreakService
 {
     public function currentStreak(User $child, ?CarbonInterface $from = null): int
     {
-        $date = CarbonImmutable::parse($from ?? today());
+        $date = CarbonImmutable::parse($from ?? today('Asia/Ho_Chi_Minh'));
         $streak = 0;
 
         while (true) {

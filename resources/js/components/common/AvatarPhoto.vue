@@ -17,7 +17,7 @@ const imageSrc = computed(() => {
 
 <template>
     <span
-        class="inline-grid shrink-0 place-items-center overflow-hidden rounded-2xl bg-gradient-to-br from-sky-100 to-amber-100 font-black text-slate-700 shadow-inner ring-1 ring-white/80"
+        class="inline-grid shrink-0 place-items-center overflow-hidden rounded-2xl bg-gradient-to-br from-sky-100 to-amber-100 font-bold text-slate-700 shadow-inner ring-1 ring-white/80"
         :class="{
             'h-10 w-10 text-sm': size === 'sm',
             'h-16 w-16 text-xl': size === 'md',

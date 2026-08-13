@@ -16,8 +16,8 @@ defineEmits(['select'])
         >
             <span class="absolute -right-8 -top-10 h-32 w-32 rounded-full bg-amber-100/70 transition group-hover:scale-110"></span>
             <AvatarPhoto class="relative" :src="child.avatar" :name="child.name" size="lg" />
-            <span class="relative mt-5 block text-2xl font-black">{{ child.name }}</span>
-            <span class="relative mt-2 inline-flex rounded-full bg-slate-950 px-3 py-1 text-xs font-black uppercase text-white">Bắt đầu</span>
+            <span class="relative mt-5 block text-2xl font-bold">{{ child.name }}</span>
+            <span class="relative mt-2 inline-flex rounded-full bg-slate-950 px-3 py-1 text-xs font-bold uppercase text-white">Bắt đầu</span>
         </button>
     </div>
 </template>

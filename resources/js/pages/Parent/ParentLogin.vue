@@ -8,7 +8,7 @@ import { useAuthStore } from '../../stores/auth.store'
 const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
-const form = reactive({ email: 'parent@example.com', password: 'password' })
+const form = reactive({ email: 'admin@gmail.com', password: '12345678' })
 const error = ref('')
 
 async function submit() {
@@ -28,13 +28,13 @@ async function submit() {
             <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_14%_12%,rgba(56,189,248,0.26),transparent_30rem),radial-gradient(circle_at_88%_18%,rgba(251,191,36,0.22),transparent_24rem),linear-gradient(135deg,#020617_0%,#0f172a_56%,#111827_100%)]"></div>
 
             <div class="relative flex min-h-[42vh] flex-col justify-between rounded-[2rem] border border-white/10 bg-white/[0.06] p-6 shadow-[0_30px_90px_rgba(0,0,0,0.25)] backdrop-blur lg:min-h-[calc(100vh-5rem)] lg:p-8">
-                <router-link to="/" class="inline-flex w-fit items-center gap-3 rounded-full bg-white/10 px-4 py-2 text-sm font-black text-white ring-1 ring-white/10 transition hover:bg-white/15">
+                <router-link to="/" class="inline-flex w-fit items-center gap-3 rounded-full bg-white/10 px-4 py-2 text-sm font-bold text-white ring-1 ring-white/10 transition hover:bg-white/15">
                     <span class="grid h-8 w-8 place-items-center rounded-full bg-amber-300 text-slate-950">K</span>
                     KidTask
                 </router-link>
 
                 <div class="my-10 max-w-2xl">
-                    <h1 class="mt-5 text-4xl font-black leading-[1.04] sm:text-6xl">
+                    <h1 class="mt-5 text-4xl font-bold leading-[1.04] sm:text-6xl">
                         Quản lý nhiệm vụ của con rõ ràng hơn mỗi ngày.
                     </h1>
                     <p class="mt-5 max-w-xl text-base font-semibold leading-7 text-slate-300">
@@ -44,16 +44,16 @@ async function submit() {
 
                 <div class="grid gap-3 sm:grid-cols-3">
                     <div class="rounded-2xl bg-white/10 p-4 ring-1 ring-white/10">
-                        <p class="text-2xl font-black">✓</p>
-                        <p class="mt-2 text-xs font-black uppercase text-slate-300">Task hằng ngày</p>
+                        <p class="text-2xl font-bold">✓</p>
+                        <p class="mt-2 text-xs font-bold uppercase text-slate-300">Task hằng ngày</p>
                     </div>
                     <div class="rounded-2xl bg-white/10 p-4 ring-1 ring-white/10">
-                        <p class="text-2xl font-black">⭐</p>
-                        <p class="mt-2 text-xs font-black uppercase text-slate-300">Điểm thưởng</p>
+                        <p class="text-2xl font-bold">⭐</p>
+                        <p class="mt-2 text-xs font-bold uppercase text-slate-300">Điểm thưởng</p>
                     </div>
                     <div class="rounded-2xl bg-white/10 p-4 ring-1 ring-white/10">
-                        <p class="text-2xl font-black">📈</p>
-                        <p class="mt-2 text-xs font-black uppercase text-slate-300">Theo dõi</p>
+                        <p class="text-2xl font-bold">📈</p>
+                        <p class="mt-2 text-xs font-bold uppercase text-slate-300">Theo dõi</p>
                     </div>
                 </div>
             </div>
@@ -62,8 +62,8 @@ async function submit() {
                 <form class="w-full rounded-[2rem] border border-white/80 bg-white p-6 text-slate-950 shadow-[0_30px_90px_rgba(0,0,0,0.26)] sm:p-8" @submit.prevent="submit">
                     <div class="flex items-start justify-between gap-4">
                         <div>
-                            <p class="text-xs font-black uppercase text-sky-600">KidTask Parent</p>
-                            <h2 class="mt-2 text-3xl font-black">Đăng nhập</h2>
+                            <p class="text-xs font-bold uppercase text-sky-600">KidTask Parent</p>
+                            <h2 class="mt-2 text-3xl font-bold">Đăng nhập</h2>
                             <p class="mt-2 text-sm font-semibold leading-6 text-slate-500">Vào khu vực phụ huynh để quản lý nhiệm vụ, điểm và phần thưởng.</p>
                         </div>
                         <span class="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-amber-100 text-xl shadow-inner">🔐</span>

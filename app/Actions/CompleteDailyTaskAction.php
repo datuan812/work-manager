@@ -8,6 +8,7 @@ use App\Models\DailyTask;
 use App\Services\AchievementService;
 use App\Services\PointService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class CompleteDailyTaskAction
 {
@@ -20,6 +21,8 @@ class CompleteDailyTaskAction
     {
         return DB::transaction(function () use ($dailyTask): array {
             $dailyTask = DailyTask::query()->with(['task.category', 'user'])->lockForUpdate()->findOrFail($dailyTask->id);
+
+            $this->ensureActionable($dailyTask);
 
             if ($dailyTask->status === DailyTaskStatus::COMPLETED) {
                 return ['daily_task' => $dailyTask, 'points_awarded' => 0, 'achievements' => []];
@@ -52,6 +55,8 @@ class CompleteDailyTaskAction
         return DB::transaction(function () use ($dailyTask): array {
             $dailyTask = DailyTask::query()->with(['task.category', 'user'])->lockForUpdate()->findOrFail($dailyTask->id);
 
+            $this->ensureActionable($dailyTask);
+
             if ($dailyTask->status !== DailyTaskStatus::COMPLETED) {
                 return ['daily_task' => $dailyTask, 'points_awarded' => 0, 'achievements' => []];
             }
@@ -72,5 +77,20 @@ class CompleteDailyTaskAction
 
             return ['daily_task' => $dailyTask->refresh()->load('task.category'), 'points_awarded' => -$dailyTask->task->points, 'achievements' => []];
         });
+    }
+
+    private function ensureActionable(DailyTask $dailyTask): void
+    {
+        if (! $dailyTask->date->isSameDay(today('Asia/Ho_Chi_Minh'))) {
+            throw ValidationException::withMessages([
+                'daily_task' => 'Chỉ có thể thay đổi nhiệm vụ trong ngày hiện tại.',
+            ]);
+        }
+
+        if ($dailyTask->status === DailyTaskStatus::SKIPPED) {
+            throw ValidationException::withMessages([
+                'daily_task' => 'Nhiệm vụ đã quá hạn và được bỏ qua.',
+            ]);
+        }
     }
 }

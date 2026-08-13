@@ -29,12 +29,15 @@ class ChildController extends Controller
     {
         abort_unless($user->isChild() && $user->is_active, 404);
 
-        $generator->generateForChild($user, today());
+        $today = today('Asia/Ho_Chi_Minh');
+
+        $generator->generateForChild($user, $today);
 
         $dailyTasks = DailyTask::query()
             ->with('task.category')
             ->where('user_id', $user->id)
-            ->whereDate('date', today())
+            ->whereDate('date', $today)
+            ->whereIn('status', [DailyTaskStatus::PENDING->value, DailyTaskStatus::COMPLETED->value])
             ->orderBy('id')
             ->get();
 
@@ -42,7 +45,7 @@ class ChildController extends Controller
 
         return [
             'child' => $this->childPayload($user),
-            'date' => today()->toDateString(),
+            'date' => $today->toDateString(),
             'tasks' => $dailyTasks->map(fn (DailyTask $dailyTask) => $this->dailyTaskPayload($dailyTask)),
             'progress' => [
                 'completed' => $completed,

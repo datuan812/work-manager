@@ -19,7 +19,7 @@ defineProps({
                 <span class="h-5 w-5 animate-spin rounded-full border-2 border-slate-300 border-t-sky-500"></span>
             </span>
             <div>
-                <p class="font-black text-slate-900">{{ title }}</p>
+                <p class="font-bold text-slate-900">{{ title }}</p>
                 <p class="mt-1 text-sm font-semibold text-slate-500">{{ message }}</p>
             </div>
         </div>

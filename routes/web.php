@@ -7,6 +7,8 @@ use App\Http\Controllers\Api\Parent\AchievementController;
 use App\Http\Controllers\Api\Parent\ChildManagementController;
 use App\Http\Controllers\Api\Parent\ParentController;
 use App\Http\Controllers\Api\Parent\RewardManagementController;
+use App\Http\Controllers\Api\Parent\TaskCalendarController;
+use App\Http\Controllers\Api\Parent\TaskHistoryController;
 use App\Http\Controllers\Api\Parent\TaskManagementController;
 use Illuminate\Support\Facades\Route;
 
@@ -31,6 +33,10 @@ Route::prefix('api')->group(function () {
         Route::get('/', [ParentController::class, 'dashboard']);
         Route::get('statistics', [ParentController::class, 'statistics']);
         Route::apiResource('children', ChildManagementController::class)->parameters(['children' => 'user']);
+        Route::get('task-calendar', [TaskCalendarController::class, 'index']);
+        Route::post('task-calendar', [TaskCalendarController::class, 'store']);
+        Route::delete('task-calendar/{dailyTask}', [TaskCalendarController::class, 'destroy']);
+        Route::get('task-history', [TaskHistoryController::class, 'index']);
         Route::apiResource('tasks', TaskManagementController::class)->except(['show']);
         Route::apiResource('rewards', RewardManagementController::class)->except(['show']);
         Route::get('achievements', [AchievementController::class, 'index']);

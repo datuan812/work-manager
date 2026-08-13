@@ -14,11 +14,13 @@ class ParentController extends Controller
 {
     public function dashboard(PointService $points, StreakService $streaks)
     {
+        $today = today('Asia/Ho_Chi_Minh');
+
         $children = User::query()
             ->where('role', UserRole::CHILD)
             ->withCount([
-                'dailyTasks as today_total' => fn ($query) => $query->whereDate('date', today()),
-                'dailyTasks as today_completed' => fn ($query) => $query->whereDate('date', today())->where('status', DailyTaskStatus::COMPLETED->value),
+                'dailyTasks as today_total' => fn ($query) => $query->whereDate('date', $today)->whereIn('status', [DailyTaskStatus::PENDING->value, DailyTaskStatus::COMPLETED->value]),
+                'dailyTasks as today_completed' => fn ($query) => $query->whereDate('date', $today)->where('status', DailyTaskStatus::COMPLETED->value),
             ])
             ->orderBy('name')
             ->get()
@@ -39,13 +41,14 @@ class ParentController extends Controller
 
     public function statistics(Request $request)
     {
+        $today = today('Asia/Ho_Chi_Minh');
         $children = User::query()->where('role', UserRole::CHILD)->get();
 
         return [
             'children_count' => $children->count(),
             'active_tasks' => \App\Models\Task::query()->where('is_active', true)->count(),
-            'completed_today' => \App\Models\DailyTask::query()->whereDate('date', today())->where('status', DailyTaskStatus::COMPLETED->value)->count(),
-            'missed_today' => \App\Models\DailyTask::query()->whereDate('date', today())->where('status', DailyTaskStatus::PENDING->value)->count(),
+            'completed_today' => \App\Models\DailyTask::query()->whereDate('date', $today)->where('status', DailyTaskStatus::COMPLETED->value)->count(),
+            'missed_today' => \App\Models\DailyTask::query()->whereDate('date', $today)->where('status', DailyTaskStatus::PENDING->value)->count(),
             'points_total' => \App\Models\PointTransaction::query()->sum('amount'),
         ];
     }

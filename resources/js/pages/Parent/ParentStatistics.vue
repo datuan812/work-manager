@@ -13,7 +13,7 @@ onMounted(() => parent.loadStatistics())
     <ParentLayout>
         <div>
             <p class="admin-section-title">Báo cáo nhanh</p>
-            <h1 class="mt-1 text-3xl font-black">Thống kê</h1>
+            <h1 class="mt-1 text-3xl font-bold">Thống kê</h1>
         </div>
 
         <LoadingState v-if="parent.loadingStates.statistics && !parent.statistics" class="mt-6" title="Đang tải thống kê" message="KidTask đang tính toán các chỉ số tổng quan." :rows="3" />

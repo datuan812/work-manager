@@ -227,7 +227,7 @@ onMounted(load);
                                 :key="achievement.id"
                                 class="rounded-2xl bg-white/80 p-4 ring-1 ring-slate-100"
                             >
-                                <p class="font-black">
+                                <p class="font-bold">
                                     {{ achievement.icon }}
                                     {{ achievement.title }}
                                 </p>
@@ -275,7 +275,7 @@ onMounted(load);
                                 class="rounded-2xl border border-slate-200 bg-white/75 p-4 text-left transition hover:-translate-y-0.5 hover:border-amber-300 hover:bg-amber-50"
                                 @click="redeem(reward)"
                             >
-                                <span class="font-black"
+                                <span class="font-bold"
                                     >{{ reward.icon }} {{ reward.title }}</span
                                 >
                                 <span

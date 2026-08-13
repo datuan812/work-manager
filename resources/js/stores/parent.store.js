@@ -2,7 +2,19 @@ import { defineStore } from 'pinia'
 import { parentService } from '../services/parent.service'
 
 export const useParentStore = defineStore('parent', {
-    state: () => ({ dashboard: null, children: [], tasks: [], categories: [], rewards: [], achievements: [], statistics: null, loading: false, loadingStates: {} }),
+    state: () => ({
+        dashboard: null,
+        children: [],
+        tasks: [],
+        categories: [],
+        taskCalendar: { assignments: [], by_date: {} },
+        taskHistory: { items: [], summary: { total: 0, completed: 0, pending: 0, skipped: 0 }, filters: {} },
+        rewards: [],
+        achievements: [],
+        statistics: null,
+        loading: false,
+        loadingStates: {},
+    }),
     actions: {
         async withLoading(key, callback) {
             this.loading = true
@@ -56,6 +68,45 @@ export const useParentStore = defineStore('parent', {
             return this.withLoading('deleteTask', async () => {
                 await parentService.deleteTask(id)
                 await this.loadTasks()
+            })
+        },
+        async loadTaskCalendar(params) {
+            return this.withLoading('taskCalendar', async () => {
+                this.taskCalendar = await parentService.taskCalendar(params)
+            })
+        },
+        async loadTaskHistory(params) {
+            return this.withLoading('taskHistory', async () => {
+                this.taskHistory = await parentService.taskHistory(params)
+            })
+        },
+        async assignTasks(payload, calendarParams = null) {
+            return this.withLoading('assignTasks', async () => {
+                await parentService.assignTasks(payload)
+                if (calendarParams) {
+                    await this.loadTaskCalendar(calendarParams)
+                }
+            })
+        },
+        async deleteTaskAssignment(id, calendarParams = null) {
+            return this.withLoading('deleteTaskAssignment', async () => {
+                await parentService.deleteTaskAssignment(id)
+                if (calendarParams) {
+                    await this.loadTaskCalendar(calendarParams)
+                }
+            })
+        },
+        async saveTaskAssignmentChanges({ deleteIds = [], assignPayload = null }, calendarParams = null) {
+            return this.withLoading('saveTaskAssignmentChanges', async () => {
+                await Promise.all(deleteIds.map((id) => parentService.deleteTaskAssignment(id)))
+
+                if (assignPayload?.task_ids?.length && assignPayload?.user_ids?.length && assignPayload?.dates?.length) {
+                    await parentService.assignTasks(assignPayload)
+                }
+
+                if (calendarParams) {
+                    await this.loadTaskCalendar(calendarParams)
+                }
             })
         },
         async loadRewards() {

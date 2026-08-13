@@ -10,7 +10,7 @@ defineProps({
     <button
         :type="type"
         :disabled="disabled"
-        class="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-black transition focus:outline-none focus:ring-3 focus:ring-sky-200 disabled:cursor-not-allowed disabled:opacity-55"
+        class="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition focus:outline-none focus:ring-3 focus:ring-sky-200 disabled:cursor-not-allowed disabled:opacity-55"
         :class="{
             'bg-sky-600 text-white shadow-sm hover:bg-sky-700': variant === 'primary',
             'bg-white text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50': variant === 'secondary',

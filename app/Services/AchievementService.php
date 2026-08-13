@@ -11,10 +11,11 @@ class AchievementService
     public function evaluate(User $child): array
     {
         $unlocked = [];
+        $today = today('Asia/Ho_Chi_Minh');
         $completedCount = $child->dailyTasks()->where('status', DailyTaskStatus::COMPLETED->value)->count();
         $streak = app(StreakService::class)->currentStreak($child);
-        $perfectToday = $child->dailyTasks()->whereDate('date', today())->exists()
-            && ! $child->dailyTasks()->whereDate('date', today())->where('status', '!=', DailyTaskStatus::COMPLETED->value)->exists();
+        $perfectToday = $child->dailyTasks()->whereDate('date', $today)->exists()
+            && ! $child->dailyTasks()->whereDate('date', $today)->where('status', '!=', DailyTaskStatus::COMPLETED->value)->exists();
 
         $rules = [
             'first_step' => $completedCount >= 1,
