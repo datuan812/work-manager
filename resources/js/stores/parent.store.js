@@ -8,7 +8,8 @@ export const useParentStore = defineStore('parent', {
         tasks: [],
         categories: [],
         taskCalendar: { assignments: [], by_date: {} },
-        taskHistory: { items: [], summary: { total: 0, completed: 0, pending: 0, skipped: 0 }, filters: {} },
+        taskHistory: { items: [], summary: { total: 0, completed: 0, pending: 0, skipped: 0 }, filters: {}, meta: { current_page: 1, last_page: 1, per_page: 25, total: 0, from: 0, to: 0 } },
+        rewardHistory: { items: [], summary: { total: 0, points_spent: 0, children: 0 }, filters: {}, meta: { current_page: 1, last_page: 1, per_page: 25, total: 0, from: 0, to: 0 } },
         rewards: [],
         achievements: [],
         statistics: null,
@@ -78,6 +79,11 @@ export const useParentStore = defineStore('parent', {
         async loadTaskHistory(params) {
             return this.withLoading('taskHistory', async () => {
                 this.taskHistory = await parentService.taskHistory(params)
+            })
+        },
+        async loadRewardHistory(params) {
+            return this.withLoading('rewardHistory', async () => {
+                this.rewardHistory = await parentService.rewardHistory(params)
             })
         },
         async assignTasks(payload, calendarParams = null) {

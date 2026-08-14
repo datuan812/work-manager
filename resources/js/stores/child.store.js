@@ -7,6 +7,7 @@ export const useChildStore = defineStore('child', {
         selectedChildId: Number(sessionStorage.getItem('selectedChildId')) || null,
         dashboard: null,
         rewards: null,
+        rewardHistory: [],
         loading: false,
         loadingStates: {},
     }),
@@ -49,11 +50,17 @@ export const useChildStore = defineStore('child', {
                 this.rewards = await childService.rewards(id)
             })
         },
+        async loadRewardHistory(id = this.selectedChildId) {
+            return this.withLoading('rewardHistory', async () => {
+                this.rewardHistory = await childService.rewardHistory(id)
+            })
+        },
         async redeem(rewardId) {
             return this.withLoading('redeem', async () => {
                 const result = await childService.redeem(this.selectedChildId, rewardId)
                 await this.loadRewards(this.selectedChildId)
                 await this.loadToday(this.selectedChildId)
+                await this.loadRewardHistory(this.selectedChildId)
                 return result
             })
         },

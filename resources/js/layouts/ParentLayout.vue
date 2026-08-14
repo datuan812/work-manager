@@ -12,13 +12,14 @@ const parent = useParentStore()
 const sidebarCollapsed = ref(false)
 const links = [
     { to: '/parent', label: 'Tổng quan', icon: LayoutDashboard },
+    { to: '/parent/statistics', label: 'Thống kê', icon: ChartNoAxesColumnIncreasing },
     { to: '/parent/children', label: 'Hồ sơ bé', icon: Users },
     { to: '/parent/tasks', label: 'Nhiệm vụ', icon: NotebookTabs },
     { to: '/parent/task-calendar', label: 'Giao nhiệm vụ', icon: CalendarCheck },
-    { to: '/parent/task-history', label: 'Lịch sử việc làm', icon: History },
     { to: '/parent/rewards', label: 'Phần thưởng', icon: Gift },
     { to: '/parent/achievements', label: 'Thành tựu', icon: Medal },
-    { to: '/parent/statistics', label: 'Thống kê', icon: ChartNoAxesColumnIncreasing },
+    { to: '/parent/task-history', label: 'Lịch sử việc làm', icon: History },
+    { to: '/parent/reward-history', label: 'Lịch sử đổi thưởng', icon: History },
 ]
 const currentLink = computed(() => [...links].sort((a, b) => b.to.length - a.to.length).find((link) => route.path === link.to || route.path.startsWith(`${link.to}/`)) ?? links[0])
 const userInitial = computed(() => (auth.user?.name || 'A').trim().slice(0, 1).toUpperCase())
@@ -50,7 +51,7 @@ async function logout() {
 
             </div>
 
-            <nav class="mt-5 flex gap-1 overflow-x-auto pb-1 lg:mt-8 lg:grid lg:gap-1 lg:overflow-visible lg:pb-0">
+            <nav class="mt-5 flex gap-1 overflow-x-auto pb-1 lg:mt-8 lg:grid lg:gap-1 lg:overflow-y-auto hide-scrollbar lg:pb-0">
                 <RouterLink
                     v-for="{ to, label, icon } in links"
                     :key="to"

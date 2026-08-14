@@ -9,6 +9,7 @@ import ParentTaskCalendar from '../pages/Parent/ParentTaskCalendar.vue'
 import ParentTaskHistory from '../pages/Parent/ParentTaskHistory.vue'
 import ParentTasks from '../pages/Parent/ParentTasks.vue'
 import ParentRewards from '../pages/Parent/ParentRewards.vue'
+import ParentRewardHistory from '../pages/Parent/ParentRewardHistory.vue'
 import ParentAchievements from '../pages/Parent/ParentAchievements.vue'
 import ParentStatistics from '../pages/Parent/ParentStatistics.vue'
 
@@ -25,6 +26,7 @@ const router = createRouter({
         { path: '/parent/task-history', component: ParentTaskHistory, meta: { requiresParent: true } },
         { path: '/parent/schedules', redirect: '/parent/task-calendar' },
         { path: '/parent/rewards', component: ParentRewards, meta: { requiresParent: true } },
+        { path: '/parent/reward-history', component: ParentRewardHistory, meta: { requiresParent: true } },
         { path: '/parent/achievements', component: ParentAchievements, meta: { requiresParent: true } },
         { path: '/parent/statistics', component: ParentStatistics, meta: { requiresParent: true } },
         { path: '/settings', redirect: '/parent' },

@@ -37,6 +37,7 @@ export const parentService = {
     deleteTask: (id) => api(`/api/parent/tasks/${id}`, { method: 'DELETE' }),
     taskCalendar: (params) => api(`/api/parent/task-calendar?${new URLSearchParams(params)}`),
     taskHistory: (params) => api(`/api/parent/task-history?${new URLSearchParams(params)}`),
+    rewardHistory: (params) => api(`/api/parent/reward-history?${new URLSearchParams(params)}`),
     assignTasks: (payload) => api('/api/parent/task-calendar', { method: 'POST', body: payload }),
     deleteTaskAssignment: (id) => api(`/api/parent/task-calendar/${id}`, { method: 'DELETE' }),
     rewards: () => api('/api/parent/rewards'),

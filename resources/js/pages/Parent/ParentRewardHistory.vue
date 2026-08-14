@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, reactive } from 'vue'
-import { CheckCircle2, CircleDashed, Clock3, Search, SkipForward } from 'lucide-vue-next'
+import { Gift, Search, Sparkles, Star, Users } from 'lucide-vue-next'
 import ParentLayout from '../../layouts/ParentLayout.vue'
 import BaseButton from '../../components/common/BaseButton.vue'
 import LoadingState from '../../components/common/LoadingState.vue'
@@ -12,15 +12,13 @@ const filters = reactive({
     start_date: dateKey(daysAgo(30)),
     end_date: dateKey(new Date()),
     user_id: '',
-    status: '',
     per_page: 25,
     page: 1,
 })
 const summaryCards = computed(() => [
-    { label: 'Tổng việc', value: parent.taskHistory.summary?.total ?? 0, icon: CircleDashed, tone: 'bg-slate-100 text-slate-700' },
-    { label: 'Hoàn thành', value: parent.taskHistory.summary?.completed ?? 0, icon: CheckCircle2, tone: 'bg-emerald-100 text-emerald-700' },
-    { label: 'Đang chờ', value: parent.taskHistory.summary?.pending ?? 0, icon: Clock3, tone: 'bg-sky-100 text-sky-700' },
-    { label: 'Bỏ qua', value: parent.taskHistory.summary?.skipped ?? 0, icon: SkipForward, tone: 'bg-amber-100 text-amber-800' },
+    { label: 'Lượt đổi', value: parent.rewardHistory.summary?.total ?? 0, icon: Gift, tone: 'bg-sky-100 text-sky-700' },
+    { label: 'Sao đã dùng', value: parent.rewardHistory.summary?.points_spent ?? 0, icon: Star, tone: 'bg-amber-100 text-amber-800' },
+    { label: 'Bé đã đổi', value: parent.rewardHistory.summary?.children ?? 0, icon: Users, tone: 'bg-emerald-100 text-emerald-700' },
 ])
 
 function daysAgo(amount) {
@@ -36,15 +34,6 @@ function dateKey(date) {
     return `${year}-${month}-${day}`
 }
 
-function formatDate(value) {
-    if (!value) return '—'
-
-    const [year, month, day] = String(value).slice(0, 10).split('-').map(Number)
-    if (!year || !month || !day) return value
-
-    return new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(year, month - 1, day))
-}
-
 function formatDateTime(value) {
     if (!value) return '—'
 
@@ -57,29 +46,12 @@ function formatDateTime(value) {
     }).format(new Date(value))
 }
 
-function statusLabel(status) {
-    return {
-        completed: 'Hoàn thành',
-        pending: 'Đang chờ',
-        skipped: 'Bỏ qua',
-    }[status] || status
-}
-
-function statusClass(status) {
-    return {
-        completed: 'bg-emerald-50 text-emerald-700 ring-emerald-100',
-        pending: 'bg-sky-50 text-sky-700 ring-sky-100',
-        skipped: 'bg-amber-50 text-amber-800 ring-amber-100',
-    }[status] || 'bg-slate-100 text-slate-600 ring-slate-200'
-}
-
 async function loadHistory(page = filters.page) {
     filters.page = page
 
-    await parent.loadTaskHistory({
+    await parent.loadRewardHistory({
         ...filters,
         user_id: filters.user_id || '',
-        status: filters.status || '',
     })
 }
 
@@ -96,13 +68,15 @@ onMounted(async () => {
     <ParentLayout>
         <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
-                <p class="admin-section-title">Theo dõi</p>
-                <h1 class="mt-1 text-3xl font-bold">Lịch sử việc làm</h1>
-                <p class="mt-2 max-w-2xl text-sm font-semibold text-slate-500">Xem lại các nhiệm vụ đã giao, hoàn thành, đang chờ hoặc đã bỏ qua của từng bé.</p>
+                <p class="admin-section-title">Đổi thưởng</p>
+                <h1 class="mt-1 text-3xl font-bold">Lịch sử đổi thưởng</h1>
+                <p class="mt-2 max-w-2xl text-sm font-semibold text-slate-500">
+                    Theo dõi các phần thưởng mà các bé đã đổi, thời gian đổi và số sao đã sử dụng.
+                </p>
             </div>
         </div>
 
-        <div class="mt-6 grid gap-3 md:grid-cols-4">
+        <div class="mt-6 grid gap-3 md:grid-cols-3">
             <article v-for="card in summaryCards" :key="card.label" class="admin-card p-4">
                 <div class="flex items-center justify-between gap-3">
                     <div>
@@ -117,7 +91,7 @@ onMounted(async () => {
         </div>
 
         <section class="admin-card mt-5 p-4">
-            <div class="grid gap-3 lg:grid-cols-[1fr_1fr_1fr_160px_140px_auto] lg:items-end">
+            <div class="grid gap-3 lg:grid-cols-[1fr_1fr_1fr_140px_auto] lg:items-end">
                 <label class="block">
                     <span class="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Từ ngày</span>
                     <input v-model="filters.start_date" type="date" class="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900" />
@@ -131,15 +105,6 @@ onMounted(async () => {
                     <select v-model="filters.user_id" class="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900">
                         <option value="">Tất cả</option>
                         <option v-for="child in parent.children" :key="child.id" :value="child.id">{{ child.name }}</option>
-                    </select>
-                </label>
-                <label class="block">
-                    <span class="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Trạng thái</span>
-                    <select v-model="filters.status" class="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900">
-                        <option value="">Tất cả</option>
-                        <option value="completed">Hoàn thành</option>
-                        <option value="pending">Đang chờ</option>
-                        <option value="skipped">Bỏ qua</option>
                     </select>
                 </label>
                 <label class="block">
@@ -158,51 +123,58 @@ onMounted(async () => {
             </div>
         </section>
 
-        <LoadingState v-if="parent.loadingStates.taskHistory && !parent.taskHistory.items.length" class="mt-5" title="Đang tải lịch sử" message="KidTask đang lấy lịch sử việc làm của các bé." :rows="6" />
+        <LoadingState
+            v-if="parent.loadingStates.rewardHistory && !parent.rewardHistory.items.length"
+            class="mt-5"
+            title="Đang tải lịch sử đổi thưởng"
+            message="KidTask đang lấy các lượt đổi thưởng của các bé."
+            :rows="6"
+        />
 
         <section v-else class="admin-card mt-5 overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="admin-table">
                     <thead>
                         <tr>
-                            <th>Ngày</th>
+                            <th>Thời gian</th>
                             <th>Bé</th>
-                            <th>Nhiệm vụ</th>
-                            <th>Điểm</th>
-                            <th>Trạng thái</th>
-                            <th>Hoàn thành lúc</th>
+                            <th>Phần thưởng</th>
+                            <th>Điểm đã dùng</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr v-for="item in parent.taskHistory.items" :key="item.id">
-                            <td class="font-bold text-slate-700">{{ formatDate(item.date) }}</td>
+                        <tr v-for="item in parent.rewardHistory.items" :key="item.id">
+                            <td class="whitespace-nowrap text-sm font-semibold text-slate-500">
+                                {{ formatDateTime(item.redeemed_at) }}
+                            </td>
                             <td class="font-bold text-slate-900">{{ item.user?.name || '—' }}</td>
                             <td>
                                 <div class="flex items-center gap-2">
-                                    <span class="grid h-9 w-9 place-items-center rounded-xl bg-slate-100 text-lg">{{ item.task?.icon || item.task?.category?.icon || '⭐' }}</span>
+                                    <span class="grid h-10 w-10 place-items-center rounded-xl bg-amber-50 text-lg ring-1 ring-amber-100">
+                                        {{ item.reward?.icon || '🎁' }}
+                                    </span>
                                     <div>
-                                        <p class="font-bold text-slate-950">{{ item.task?.title }}</p>
-                                        <p class="text-xs font-semibold text-slate-500">{{ item.task?.category?.name || 'Không danh mục' }}</p>
+                                        <p class="font-bold text-slate-950">{{ item.reward?.title || 'Phần thưởng đã xóa' }}</p>
+                                        <p class="text-xs font-semibold text-slate-500">{{ item.reward?.description || 'Không có mô tả' }}</p>
                                     </div>
                                 </div>
                             </td>
-                            <td class="font-bold text-amber-700">+{{ item.task?.points ?? 0 }}</td>
-                            <td>
-                                <span class="rounded-full px-3 py-1 text-xs font-bold ring-1" :class="statusClass(item.status)">
-                                    {{ statusLabel(item.status) }}
-                                </span>
-                            </td>
-                            <td class="text-sm font-semibold text-slate-500">{{ formatDateTime(item.completed_at) }}</td>
+                            <td class="font-bold text-amber-700">-{{ item.points_spent }} ⭐</td>
                         </tr>
-                        <tr v-if="!parent.taskHistory.items.length">
-                            <td colspan="6" class="py-8 text-center text-sm font-semibold text-slate-500">Chưa có lịch sử việc làm trong khoảng đã chọn.</td>
+                        <tr v-if="!parent.rewardHistory.items.length">
+                            <td colspan="4" class="py-8 text-center">
+                                <Sparkles class="mx-auto h-8 w-8 text-sky-500" />
+                                <p class="mt-2 text-sm font-semibold text-slate-500">
+                                    Chưa có lịch sử đổi thưởng trong khoảng đã chọn.
+                                </p>
+                            </td>
                         </tr>
                     </tbody>
                 </table>
             </div>
             <PaginationControls
-                :meta="parent.taskHistory.meta"
-                :loading="parent.loadingStates.taskHistory"
+                :meta="parent.rewardHistory.meta"
+                :loading="parent.loadingStates.rewardHistory"
                 @change="loadHistory"
             />
         </section>

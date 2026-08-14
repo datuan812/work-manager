@@ -100,6 +100,28 @@ class ChildController extends Controller
         ];
     }
 
+    public function rewardHistory(User $user)
+    {
+        abort_unless($user->isChild(), 404);
+
+        return $user->rewardRedemptions()
+            ->with('reward')
+            ->latest('redeemed_at')
+            ->limit(50)
+            ->get()
+            ->map(fn ($redemption) => [
+                'id' => $redemption->id,
+                'points_spent' => $redemption->points_spent,
+                'redeemed_at' => $redemption->redeemed_at?->toIso8601String(),
+                'reward' => $redemption->reward ? [
+                    'id' => $redemption->reward->id,
+                    'title' => $redemption->reward->title,
+                    'description' => $redemption->reward->description,
+                    'icon' => $redemption->reward->icon,
+                ] : null,
+            ]);
+    }
+
     public function redeem(User $user, Reward $reward, RewardRedemptionService $redemptions)
     {
         abort_unless($user->isChild(), 404);

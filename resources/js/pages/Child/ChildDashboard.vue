@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import ChildLayout from "../../layouts/ChildLayout.vue";
 import ChildHeader from "../../components/child/ChildHeader.vue";
+import RewardHistoryModal from "../../components/child/RewardHistoryModal.vue";
 import RewardsSheet from "../../components/child/RewardsSheet.vue";
 import TaskCard from "../../components/child/TaskCard.vue";
 import ProgressBar from "../../components/common/ProgressBar.vue";
@@ -18,6 +19,7 @@ const childStore = useChildStore();
 const toast = useToastStore();
 const busyId = ref(null);
 const showRewards = ref(false);
+const showRewardHistory = ref(false);
 
 const today = new Intl.DateTimeFormat("vi-VN", {
     weekday: "long",
@@ -65,8 +67,13 @@ function toggleRewards() {
     showRewards.value = !showRewards.value;
 }
 
-function goToHistory() {
-    router.push(`/child/${route.params.id}/history`);
+async function openRewardHistory() {
+    showRewardHistory.value = true;
+    try {
+        await childStore.loadRewardHistory(route.params.id);
+    } catch (error) {
+        toast.show(error.message, "error");
+    }
 }
 
 onMounted(load);
@@ -78,7 +85,7 @@ onMounted(load);
             :points="dashboard?.points ?? 0"
             :rewards-open="showRewards"
             @change-child="router.push('/')"
-            @show-history="goToHistory"
+            @show-history="openRewardHistory"
             @toggle-rewards="toggleRewards"
         />
 
@@ -259,6 +266,13 @@ onMounted(load);
             :loading="childStore.loadingStates.rewards && !childStore.rewards"
             @close="showRewards = false"
             @redeem="redeem"
+        />
+
+        <RewardHistoryModal
+            :open="showRewardHistory"
+            :history="childStore.rewardHistory"
+            :loading="childStore.loadingStates.rewardHistory"
+            @close="showRewardHistory = false"
         />
     </ChildLayout>
 </template>
