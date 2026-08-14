@@ -6,7 +6,7 @@ defineEmits(['toggle'])
 <template>
     <button
         type="button"
-        class="group grid min-h-40 w-full grid-cols-[1fr_auto] gap-4 overflow-hidden rounded-[1.5rem] border p-5 text-left shadow-[0_16px_46px_rgba(15,23,42,0.08)] transition hover:-translate-y-0.5 hover:shadow-[0_24px_62px_rgba(15,23,42,0.13)] focus:outline-none focus:ring-4 focus:ring-sky-200 disabled:opacity-70"
+        class="group grid min-h-40 w-full grid-cols-[1fr_auto] gap-4 overflow-hidden rounded-[1.5rem] border p-5 text-left shadow-[0_16px_46px_rgba(15,23,42,0.08)] transition hover:border-2 hover:border-sky-300 hover:-translate-y-0.5 hover:shadow-[0_24px_62px_rgba(15,23,42,0.13)] focus:outline-none focus:ring-4 focus:ring-sky-200 disabled:opacity-70"
         :class="dailyTask.status === 'completed' ? 'border-emerald-200 bg-emerald-50/90' : 'border-white/80 bg-white/[0.82] backdrop-blur'"
         :disabled="busy"
         @click="$emit('toggle', dailyTask)"

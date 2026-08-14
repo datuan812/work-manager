@@ -104,9 +104,9 @@ async function logout() {
                 </div>
 
                 <div class="flex items-center gap-2">
-                    <RouterLink to="/" class="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl px-3 text-sm font-bold text-slate-600 ring-1 ring-slate-200 transition hover:bg-slate-50 hover:text-slate-950">
+                    <RouterLink to="/" class="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl px-3 text-sm font-bold text-white ring-1 ring-slate-200 transition bg-sky-600 hover:bg-sky-700 ">
                         <MonitorSmartphone class="h-4 w-4" />
-                        <span class="hidden sm:inline">Child Mode</span>
+                        <span class="hidden sm:inline">Chế độ Trẻ em</span>
                     </RouterLink>
                     <button class="inline-flex min-h-10 items-center justify-center rounded-xl px-3 text-sm font-bold text-slate-600 ring-1 ring-slate-200 transition hover:bg-slate-50 hover:text-slate-950 lg:hidden" @click="logout">
                         <LogOut class="h-4 w-4" />

@@ -2,6 +2,7 @@
 import { computed, onMounted, ref, watch } from "vue";
 import ParentLayout from "../../layouts/ParentLayout.vue";
 import BaseButton from "../../components/common/BaseButton.vue";
+import TaskAssignModal from "../../components/parent/TaskAssignModal.vue";
 import { useParentStore } from "../../stores/parent.store";
 import { useToastStore } from "../../stores/toast.store";
 import { ChevronLeft, ChevronRight } from "lucide-vue-next";
@@ -340,6 +341,14 @@ function toggleChild(childId) {
     selectedChildIds.value = selectedChildIds.value.includes(childId)
         ? selectedChildIds.value.filter((id) => id !== childId)
         : [...selectedChildIds.value, childId];
+}
+
+function selectAllTasks() {
+    selectedTaskIds.value = activeTaskTemplates.value.map((task) => task.id);
+}
+
+function clearTaskSelection() {
+    selectedTaskIds.value = [];
 }
 
 function openModal(key) {
@@ -708,166 +717,23 @@ onMounted(async () => {
             </div>
         </section>
 
-        <div
-            v-if="modalDate"
-            class="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-4"
-            @click.self="closeModal"
-        >
-            <section
-                class="max-h-[92vh] overflow-y-auto w-full max-w-5xl overflow-hidden rounded-2xl bg-white shadow-2xl"
-            >
-                <div
-                    class="flex items-start justify-between gap-4 border-b border-slate-200 p-5"
-                >
-                    <div>
-                        <p class="admin-section-title">Giao nhiệm vụ</p>
-                        <h2 class="mt-1 text-2xl font-bold">
-                            {{ modalDates.length }} ngày
-                        </h2>
-                        <p class="mt-1 text-sm font-bold text-slate-600">
-                            {{ modalDateSummary }}
-                        </p>
-                        <p
-                            v-if="modalDatePreview"
-                            class="mt-1 text-xs font-semibold text-slate-400"
-                        >
-                            {{ modalDatePreview }}
-                        </p>
-                        <p
-                            v-if="modalHasLockedDates"
-                            class="mt-2 rounded-lg bg-slate-100 px-3 py-2 text-xs font-bold text-slate-600"
-                        >
-                            Ngày đã đến hạn hoặc đã qua chỉ được xem, không thể
-                            thay đổi.
-                        </p>
-                    </div>
-                    <button
-                        class="rounded-xl px-2 py-2 text-sm font-bold text-slate-500 bg-gray-100 hover:bg-slate-200"
-                        type="button"
-                        @click="closeModal"
-                    >
-                        ❌
-                    </button>
-                </div>
-
-                <div class="p-5">
-                    <div>
-                        <div class="flex items-center justify-between gap-3">
-                            <h3 class="font-bold">Nhiệm vụ</h3>
-                            <span
-                                class="rounded-lg bg-sky-50 px-2 py-1 text-xs font-bold text-sky-700"
-                                >{{ selectedTaskIds.length }} chọn</span
-                            >
-                        </div>
-                        <div class="mt-3 grid grid-cols-3 gap-2">
-                            <label
-                                v-for="task in activeTaskTemplates"
-                                :key="task.id"
-                                class="flex min-h-14 items-center gap-3 rounded-xl border px-3 py-2"
-                                :class="
-                                    selectedTaskIds.includes(task.id)
-                                        ? 'border-sky-300 bg-sky-50'
-                                        : 'border-slate-200'
-                                "
-                            >
-                                <input
-                                    type="checkbox"
-                                    class="h-5 w-5 rounded border-slate-300 text-sky-600 focus:ring-sky-200"
-                                    :checked="selectedTaskIds.includes(task.id)"
-                                    :disabled="modalHasLockedDates"
-                                    @change="toggleTask(task.id)"
-                                />
-                                <span
-                                    class="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-slate-100 text-lg"
-                                    >{{ task.icon }}</span
-                                >
-                                <span class="min-w-0 flex-1">
-                                    <span
-                                        class="block truncate text-sm font-bold text-slate-950"
-                                        >{{ task.title }}</span
-                                    >
-                                    <span
-                                        class="block truncate text-xs font-bold text-slate-500"
-                                        >{{
-                                            task.category?.name ||
-                                            "Không danh mục"
-                                        }}
-                                        · +{{ task.points }}</span
-                                    >
-                                </span>
-                            </label>
-                            <div
-                                v-if="!activeTaskTemplates.length"
-                                class="rounded-xl border border-dashed border-slate-200 p-4 text-sm font-semibold text-slate-500"
-                            >
-                                Chưa có nhiệm vụ đang bật.
-                            </div>
-                        </div>
-                    </div>
-
-                    <div>
-                        <div
-                            class="flex items-center justify-between gap-3 mt-5"
-                        >
-                            <h3 class="font-bold">Bé nhận nhiệm vụ</h3>
-                            <span
-                                class="rounded-lg bg-amber-50 px-2 py-1 text-xs font-bold text-amber-700"
-                                >{{ selectedChildIds.length }} chọn</span
-                            >
-                        </div>
-                        <div class="mt-3 grid grid-cols-4 gap-2">
-                            <label
-                                v-for="child in parent.children"
-                                :key="child.id"
-                                class="flex min-h-14 items-center gap-3 rounded-xl border px-3 py-2"
-                                :class="
-                                    selectedChildIds.includes(child.id)
-                                        ? 'border-amber-300 bg-amber-50'
-                                        : 'border-slate-200'
-                                "
-                            >
-                                <input
-                                    type="checkbox"
-                                    class="h-5 w-5 rounded border-slate-300 text-amber-500 focus:ring-amber-100"
-                                    :checked="
-                                        selectedChildIds.includes(child.id)
-                                    "
-                                    :disabled="modalHasLockedDates"
-                                    @change="toggleChild(child.id)"
-                                />
-                                <span
-                                    class="min-w-0 flex-1 truncate text-sm font-bold text-slate-950"
-                                    >{{ child.name }}</span
-                                >
-                            </label>
-                            <div
-                                v-if="!parent.children.length"
-                                class="rounded-xl border border-dashed border-slate-200 p-4 text-sm font-semibold text-slate-500"
-                            >
-                                Chưa có hồ sơ bé.
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div
-                    class="flex flex-col-reverse gap-2 border-t border-slate-200 p-5 sm:flex-row sm:justify-end"
-                >
-                    <BaseButton variant="secondary" @click="closeModal"
-                        >Hủy</BaseButton
-                    >
-                    <BaseButton
-                        :disabled="
-                            modalHasLockedDates ||
-                            (!modalHasAssignments &&
-                                (!selectedTaskIds.length ||
-                                    !selectedChildIds.length))
-                        "
-                        @click="assignSelectedTasks"
-                        >Lưu thay đổi</BaseButton
-                    >
-                </div>
-            </section>
-        </div>
+        <TaskAssignModal
+            :open="!!modalDate"
+            :date-summary="modalDateSummary"
+            :date-preview="modalDatePreview"
+            :date-count="modalDates.length"
+            :has-locked-dates="modalHasLockedDates"
+            :has-assignments="modalHasAssignments"
+            :tasks="activeTaskTemplates"
+            :selected-task-ids="selectedTaskIds"
+            :children="parent.children"
+            :selected-child-ids="selectedChildIds"
+            @close="closeModal"
+            @toggle-task="toggleTask"
+            @toggle-child="toggleChild"
+            @select-all-tasks="selectAllTasks"
+            @clear-tasks="clearTaskSelection"
+            @save="assignSelectedTasks"
+        />
     </ParentLayout>
 </template>

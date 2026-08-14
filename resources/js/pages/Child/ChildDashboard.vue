@@ -1,7 +1,9 @@
 <script setup>
-import { computed, nextTick, onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import ChildLayout from "../../layouts/ChildLayout.vue";
+import ChildHeader from "../../components/child/ChildHeader.vue";
+import RewardsSheet from "../../components/child/RewardsSheet.vue";
 import TaskCard from "../../components/child/TaskCard.vue";
 import ProgressBar from "../../components/common/ProgressBar.vue";
 import EmptyState from "../../components/common/EmptyState.vue";
@@ -16,7 +18,6 @@ const childStore = useChildStore();
 const toast = useToastStore();
 const busyId = ref(null);
 const showRewards = ref(false);
-const rewardsPanel = ref(null);
 
 const today = new Intl.DateTimeFormat("vi-VN", {
     weekday: "long",
@@ -49,6 +50,9 @@ async function toggleTask(task) {
 }
 
 async function redeem(reward) {
+    if (dashboard.value && dashboard.value.points < reward.required_points) {
+        return;
+    }
     try {
         await childStore.redeem(reward.id);
         toast.show(`Đã đổi: ${reward.title}`);
@@ -57,16 +61,12 @@ async function redeem(reward) {
     }
 }
 
-async function toggleRewards() {
+function toggleRewards() {
     showRewards.value = !showRewards.value;
+}
 
-    if (showRewards.value) {
-        await nextTick();
-        rewardsPanel.value?.scrollIntoView({
-            behavior: "smooth",
-            block: "start",
-        });
-    }
+function goToHistory() {
+    router.push(`/child/${route.params.id}/history`);
 }
 
 onMounted(load);
@@ -74,16 +74,17 @@ onMounted(load);
 
 <template>
     <ChildLayout>
-        <section
-            class="mx-auto max-w-5xl px-4 py-5 sm:px-6 sm:py-10 overflow-hidden"
-        >
-            <button
-                class="fixed top-5 left-5 z-40 inline-flex min-h-11 items-center justify-center rounded-full bg-blue-300/[0.82] px-4 text-sm font-extrabold shadow-sm ring-1 ring-white/80 backdrop-blur transition hover:-translate-y-0.5"
-                @click="router.push('/')"
-            >
-                ← Đổi bé
-            </button>
+        <ChildHeader
+            :points="dashboard?.points ?? 0"
+            :rewards-open="showRewards"
+            @change-child="router.push('/')"
+            @show-history="goToHistory"
+            @toggle-rewards="toggleRewards"
+        />
 
+        <section
+            class="mx-auto max-w-5xl px-4 pb-6 pt-16 sm:px-6 sm:pt-20 overflow-hidden"
+        >
             <LoadingState
                 v-if="childStore.loadingStates.dashboard && !dashboard"
                 class="mt-6"
@@ -108,12 +109,12 @@ onMounted(load);
                                     Hôm nay · {{ today }}
                                 </p>
                                 <h1
-                                    class="mt-4 text-4xl font-extrabold leading-tight sm:text-6xl"
+                                    class="mt-4 text-4xl font-extrabold leading-tight text-slate-900 sm:text-6xl"
                                 >
                                     {{ dashboard.child.name }}
                                 </h1>
                                 <p
-                                    class="mt-3 max-w-xl text-sm font-bold leading-6 text-slate-500"
+                                    class="mt-3 max-w-xl text-sm font-medium leading-6 text-slate-600"
                                 >
                                     Hoàn thành từng nhiệm vụ nhỏ để gom sao và
                                     giữ chuỗi ngày tốt.
@@ -131,11 +132,11 @@ onMounted(load);
                                 class="rounded-2xl bg-sky-50 p-4 ring-1 ring-sky-100"
                             >
                                 <p
-                                    class="text-xs font-extrabold uppercase text-slate-500"
+                                    class="text-xs font-bold uppercase text-slate-600"
                                 >
                                     Tiến độ
                                 </p>
-                                <p class="mt-2 text-2xl font-extrabold">
+                                <p class="mt-2 text-2xl font-extrabold text-slate-900">
                                     {{ dashboard.progress.completed }}/{{
                                         dashboard.progress.total
                                     }}
@@ -145,11 +146,11 @@ onMounted(load);
                                 class="rounded-2xl bg-amber-50 p-4 ring-1 ring-amber-100"
                             >
                                 <p
-                                    class="text-xs font-extrabold uppercase text-slate-500"
+                                    class="text-xs font-bold uppercase text-slate-600"
                                 >
                                     Điểm sao
                                 </p>
-                                <p class="mt-2 text-2xl font-extrabold">
+                                <p class="mt-2 text-2xl font-extrabold text-slate-900">
                                     {{ dashboard.points }} ⭐
                                 </p>
                             </div>
@@ -157,11 +158,11 @@ onMounted(load);
                                 class="rounded-2xl bg-emerald-50 p-4 ring-1 ring-emerald-100"
                             >
                                 <p
-                                    class="text-xs font-extrabold uppercase text-slate-500"
+                                    class="text-xs font-bold uppercase text-slate-600"
                                 >
                                     Streak
                                 </p>
-                                <p class="mt-2 text-2xl font-extrabold">
+                                <p class="mt-2 text-2xl font-extrabold text-slate-900">
                                     🔥 {{ dashboard.streak }}
                                 </p>
                             </div>
@@ -169,7 +170,7 @@ onMounted(load);
                         <div class="mt-6">
                             <ProgressBar :value="dashboard.progress.percent" />
                             <p
-                                class="mt-3 text-sm font-extrabold text-slate-500"
+                                class="mt-3 text-sm font-semibold text-slate-600"
                             >
                                 {{ dashboard.progress.percent }}% hoàn thành hôm
                                 nay
@@ -180,16 +181,16 @@ onMounted(load);
                     <div class="mt-7 flex items-end justify-between gap-4">
                         <div>
                             <p
-                                class="text-xs font-extrabold uppercase text-sky-700"
+                                class="text-xs font-bold uppercase text-sky-700"
                             >
                                 Danh sách nhiệm vụ
                             </p>
-                            <h2 class="mt-1 text-2xl font-extrabold">
-                                Việc cần làm
+                            <h2 class="mt-1 text-2xl font-extrabold text-slate-900">
+                                Việc cần làm hôm nay
                             </h2>
                         </div>
                         <p
-                            class="rounded-full bg-white/80 px-3 py-2 text-xs font-extrabold text-slate-500 shadow-sm"
+                            class="rounded-full bg-white/80 px-3 py-2 text-xs font-bold text-slate-600 shadow-sm"
                         >
                             {{ dashboard.progress.completed }} đã xong
                         </p>
@@ -212,10 +213,12 @@ onMounted(load);
                     />
                 </section>
 
-                <aside class="mt-6 space-y-5">
+                <section class="mt-6 space-y-5">
                     <div class="soft-panel rounded-[1.75rem] p-5">
                         <div class="flex items-center justify-between gap-3">
-                            <h2 class="text-lg font-extrabold">Thành tựu</h2>
+                            <h2 class="text-lg font-extrabold text-slate-900">
+                                Thành tựu
+                            </h2>
                             <span
                                 class="rounded-full bg-sky-100 px-3 py-1 text-xs font-extrabold text-sky-700"
                                 >{{ dashboard.achievements.length }}</span
@@ -227,83 +230,35 @@ onMounted(load);
                                 :key="achievement.id"
                                 class="rounded-2xl bg-white/80 p-4 ring-1 ring-slate-100"
                             >
-                                <p class="font-bold">
+                                <p class="font-bold text-slate-900">
                                     {{ achievement.icon }}
                                     {{ achievement.title }}
                                 </p>
                                 <p
-                                    class="mt-1 text-sm font-semibold leading-6 text-slate-500"
+                                    class="mt-1 text-sm font-medium leading-6 text-slate-600"
                                 >
                                     {{ achievement.description }}
                                 </p>
                             </div>
                             <p
                                 v-if="!dashboard.achievements.length"
-                                class="text-sm font-semibold text-slate-500"
+                                class="text-sm font-medium text-slate-600"
                             >
                                 Hoàn thành nhiệm vụ đầu tiên để mở khóa.
                             </p>
                         </div>
                     </div>
-                    <div
-                        v-if="showRewards"
-                        ref="rewardsPanel"
-                        class="soft-panel scroll-mt-24 rounded-[1.75rem] p-5"
-                    >
-                        <div class="flex items-center justify-between gap-3">
-                            <h2 class="text-lg font-extrabold">Phần thưởng</h2>
-                            <span
-                                class="rounded-full bg-amber-100 px-3 py-1 text-xs font-extrabold text-amber-700"
-                                >{{ dashboard.points }} ⭐</span
-                            >
-                        </div>
-                        <LoadingState
-                            v-if="
-                                childStore.loadingStates.rewards &&
-                                !childStore.rewards
-                            "
-                            class="mt-4"
-                            title="Đang tải phần thưởng"
-                            message="Danh sách đổi thưởng sẽ hiện ngay sau khi tải xong."
-                            variant="child"
-                            :rows="2"
-                        />
-                        <div v-else class="mt-4 grid gap-3">
-                            <button
-                                v-for="reward in childStore.rewards?.rewards"
-                                :key="reward.id"
-                                class="rounded-2xl border border-slate-200 bg-white/75 p-4 text-left transition hover:-translate-y-0.5 hover:border-amber-300 hover:bg-amber-50"
-                                @click="redeem(reward)"
-                            >
-                                <span class="font-bold"
-                                    >{{ reward.icon }} {{ reward.title }}</span
-                                >
-                                <span
-                                    class="mt-1 block text-sm font-extrabold text-amber-700"
-                                    >{{ reward.required_points }} ⭐</span
-                                >
-                            </button>
-                        </div>
-                    </div>
-                </aside>
+                </section>
             </div>
-
-            <button
-                type="button"
-                class="reward-fab fixed bottom-5 right-5 z-40 inline-flex min-h-14 items-center gap-3 rounded-full bg-amber-300 px-5 text-sm font-extrabold text-slate-950 shadow-[0_18px_44px_rgba(245,158,11,0.38)] ring-4 ring-white/70 transition hover:-translate-y-1 hover:bg-amber-200 focus:outline-none focus:ring-4 focus:ring-amber-100 sm:bottom-7 sm:right-7"
-                @click="toggleRewards"
-            >
-                <span
-                    class="grid h-9 w-9 place-items-center rounded-full bg-white/80 text-lg shadow-inner"
-                    >🎁</span
-                >
-                <span>{{ showRewards ? "Ẩn thưởng" : "Đổi thưởng" }}</span>
-                <span
-                    v-if="dashboard"
-                    class="rounded-full bg-slate-950 px-2.5 py-1 text-xs text-white"
-                    >{{ dashboard.points }} ⭐</span
-                >
-            </button>
         </section>
+
+        <RewardsSheet
+            :open="showRewards"
+            :points="dashboard?.points ?? 0"
+            :rewards="childStore.rewards?.rewards ?? []"
+            :loading="childStore.loadingStates.rewards && !childStore.rewards"
+            @close="showRewards = false"
+            @redeem="redeem"
+        />
     </ChildLayout>
 </template>
