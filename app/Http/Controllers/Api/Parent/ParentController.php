@@ -73,15 +73,15 @@ class ParentController extends Controller
                 )?->total ?? 0);
                 $completed = $statusTotal(DailyTaskStatus::COMPLETED);
                 $pending = $statusTotal(DailyTaskStatus::PENDING);
-                $skipped = $statusTotal(DailyTaskStatus::SKIPPED);
-                $total = $completed + $pending + $skipped;
+                $incomplete = $statusTotal(DailyTaskStatus::INCOMPLETE);
+                $total = $completed + $pending + $incomplete;
 
                 return [
                     'date' => $key,
                     'label' => $date->format('d/m'),
                     'completed' => $completed,
                     'pending' => $pending,
-                    'skipped' => $skipped,
+                    'incomplete' => $incomplete,
                     'total' => $total,
                     'completion_percent' => $total ? (int) round($completed / $total * 100) : 0,
                 ];
@@ -147,7 +147,7 @@ class ParentController extends Controller
             'active_tasks' => Task::query()->where('is_active', true)->count(),
             'completed_today' => (int) ($todayStatusRows[DailyTaskStatus::COMPLETED->value] ?? 0),
             'missed_today' => (int) ($todayStatusRows[DailyTaskStatus::PENDING->value] ?? 0),
-            'skipped_today' => (int) ($todayStatusRows[DailyTaskStatus::SKIPPED->value] ?? 0),
+            'incomplete_today' => (int) ($todayStatusRows[DailyTaskStatus::INCOMPLETE->value] ?? 0),
             'points_total' => (int) PointTransaction::query()->sum('amount'),
             'daily_trend' => $dailyTrend,
             'child_performance' => $childPerformance,
@@ -155,7 +155,7 @@ class ParentController extends Controller
             'today_status' => [
                 'completed' => (int) ($todayStatusRows[DailyTaskStatus::COMPLETED->value] ?? 0),
                 'pending' => (int) ($todayStatusRows[DailyTaskStatus::PENDING->value] ?? 0),
-                'skipped' => (int) ($todayStatusRows[DailyTaskStatus::SKIPPED->value] ?? 0),
+                'incomplete' => (int) ($todayStatusRows[DailyTaskStatus::INCOMPLETE->value] ?? 0),
             ],
             'top_rewards' => $topRewards,
         ];

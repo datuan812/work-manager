@@ -18,6 +18,9 @@ Route::view('/', 'welcome');
 Route::prefix('api')->group(function () {
     Route::get('children', [ChildController::class, 'index']);
     Route::get('children/{user}/today', [ChildController::class, 'today']);
+    Route::get('children/{user}/daily-tasks', [ChildController::class, 'dailyTasks']);
+    Route::patch('children/{user}/daily-tasks/draft', [ChildController::class, 'saveDailyTaskDraft']);
+    Route::post('children/{user}/daily-tasks/submit', [ChildController::class, 'submitDailyTasks']);
     Route::get('children/{user}/progress', [ChildController::class, 'progress']);
     Route::get('children/{user}/achievements', [ChildController::class, 'achievements']);
     Route::get('children/{user}/rewards', [ChildController::class, 'rewards']);

@@ -46,6 +46,16 @@ class User extends Authenticatable
         return $this->hasMany(DailyTask::class);
     }
 
+    public function dailyTaskSubmissions(): HasMany
+    {
+        return $this->hasMany(DailyTaskSubmission::class);
+    }
+
+    public function dailyTaskDrafts(): HasMany
+    {
+        return $this->hasMany(DailyTaskDraft::class);
+    }
+
     public function pointTransactions(): HasMany
     {
         return $this->hasMany(PointTransaction::class);

@@ -5,6 +5,7 @@ namespace App\Actions;
 use App\Enums\DailyTaskStatus;
 use App\Enums\PointTransactionType;
 use App\Models\DailyTask;
+use App\Models\DailyTaskSubmission;
 use App\Services\AchievementService;
 use App\Services\PointService;
 use Illuminate\Support\Facades\DB;
@@ -81,16 +82,23 @@ class CompleteDailyTaskAction
 
     private function ensureActionable(DailyTask $dailyTask): void
     {
-        if (! $dailyTask->date->isSameDay(today('Asia/Ho_Chi_Minh'))) {
+        $today = today('Asia/Ho_Chi_Minh');
+        $yesterday = today('Asia/Ho_Chi_Minh')->subDay();
+
+        if (! $dailyTask->date->isSameDay($today) && ! $dailyTask->date->isSameDay($yesterday)) {
             throw ValidationException::withMessages([
-                'daily_task' => 'Chỉ có thể thay đổi nhiệm vụ trong ngày hiện tại.',
+                'daily_task' => 'Chỉ có thể thay đổi nhiệm vụ hôm nay hoặc hôm qua.',
             ]);
         }
 
-        if ($dailyTask->status === DailyTaskStatus::SKIPPED) {
+        if (DailyTaskSubmission::query()
+            ->where('user_id', $dailyTask->user_id)
+            ->whereDate('date', $dailyTask->date)
+            ->exists()) {
             throw ValidationException::withMessages([
-                'daily_task' => 'Nhiệm vụ đã quá hạn và được bỏ qua.',
+                'daily_task' => 'Ngày này đã được chốt nên không thể thay đổi.',
             ]);
         }
+
     }
 }

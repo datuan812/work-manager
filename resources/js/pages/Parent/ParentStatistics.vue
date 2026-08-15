@@ -11,8 +11,8 @@ const dailyTrend = computed(() => stats.value.daily_trend ?? [])
 const childPerformance = computed(() => stats.value.child_performance ?? [])
 const categoryStats = computed(() => stats.value.category_stats ?? [])
 const topRewards = computed(() => stats.value.top_rewards ?? [])
-const todayStatus = computed(() => stats.value.today_status ?? { completed: 0, pending: 0, skipped: 0 })
-const todayTotal = computed(() => todayStatus.value.completed + todayStatus.value.pending + todayStatus.value.skipped)
+const todayStatus = computed(() => stats.value.today_status ?? { completed: 0, pending: 0, incomplete: 0 })
+const todayTotal = computed(() => todayStatus.value.completed + todayStatus.value.pending + todayStatus.value.incomplete)
 const todayCompletion = computed(() => todayTotal.value ? Math.round((todayStatus.value.completed / todayTotal.value) * 100) : 0)
 const maxDailyTotal = computed(() => Math.max(1, ...dailyTrend.value.map((item) => item.total || 0)))
 const maxChildCompleted = computed(() => Math.max(1, ...childPerformance.value.map((child) => child.completed_tasks || 0)))
@@ -39,7 +39,13 @@ function barHeight(value) {
 }
 
 function barWidth(value, max) {
-    return `${Math.max(4, Math.round((Number(value || 0) / max) * 100))}%`
+    const numericValue = Number(value || 0)
+
+    if (numericValue <= 0) {
+        return '0%'
+    }
+
+    return `${Math.max(4, Math.round((numericValue / max) * 100))}%`
 }
 
 onMounted(() => parent.loadStatistics())
@@ -181,8 +187,8 @@ onMounted(() => parent.loadStatistics())
                             <span>{{ todayStatus.pending }}</span>
                         </div>
                         <div class="flex items-center justify-between rounded-xl bg-amber-50 px-3 py-2 text-sm font-bold text-amber-800">
-                            <span>Bỏ qua</span>
-                            <span>{{ todayStatus.skipped }}</span>
+                            <span>Chưa hoàn thành</span>
+                            <span>{{ todayStatus.incomplete }}</span>
                         </div>
                     </div>
                 </section>

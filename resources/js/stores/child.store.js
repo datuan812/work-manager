@@ -37,6 +37,31 @@ export const useChildStore = defineStore('child', {
                 this.dashboard = await childService.today(id)
             })
         },
+        async loadDailyTasks(id = this.selectedChildId, date) {
+            return this.withLoading('dashboard', async () => {
+                this.dashboard = await childService.dailyTasks(id, date)
+            })
+        },
+        async saveDailyTaskDraft(date, completedTaskIds) {
+            return this.withLoading('taskDraft', async () => {
+                const result = await childService.saveDailyTaskDraft(this.selectedChildId, {
+                    date,
+                    completed_task_ids: completedTaskIds,
+                })
+                this.dashboard = result
+                return result
+            })
+        },
+        async submitDailyTasks(date, completedTaskIds) {
+            return this.withLoading('submitDailyTasks', async () => {
+                const result = await childService.submitDailyTasks(this.selectedChildId, {
+                    date,
+                    completed_task_ids: completedTaskIds,
+                })
+                this.dashboard = result
+                return result
+            })
+        },
         async toggleTask(dailyTask) {
             return this.withLoading('taskAction', async () => {
                 const done = dailyTask.status === 'completed'

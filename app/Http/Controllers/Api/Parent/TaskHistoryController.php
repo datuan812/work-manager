@@ -57,7 +57,7 @@ class TaskHistoryController extends Controller
                 'total' => $summary->sum(),
                 'completed' => (int) ($summary[DailyTaskStatus::COMPLETED->value] ?? 0),
                 'pending' => (int) ($summary[DailyTaskStatus::PENDING->value] ?? 0),
-                'skipped' => (int) ($summary[DailyTaskStatus::SKIPPED->value] ?? 0),
+                'incomplete' => (int) ($summary[DailyTaskStatus::INCOMPLETE->value] ?? 0),
             ],
             'filters' => [
                 'start_date' => $startDate->toDateString(),

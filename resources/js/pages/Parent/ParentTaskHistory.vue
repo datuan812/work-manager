@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, reactive, ref, watch } from 'vue'
-import { CheckCircle2, CalendarDays, CircleDashed, Clock3, RotateCcw, SkipForward } from 'lucide-vue-next'
+import { CheckCircle2, CalendarDays, CircleDashed, Clock3, RotateCcw } from 'lucide-vue-next'
 import ParentLayout from '../../layouts/ParentLayout.vue'
 import BaseButton from '../../components/common/BaseButton.vue'
 import LoadingState from '../../components/common/LoadingState.vue'
@@ -24,7 +24,7 @@ const summaryCards = computed(() => [
     { label: 'Tổng việc', value: parent.taskHistory.summary?.total ?? 0, icon: CircleDashed, tone: 'bg-slate-100 text-slate-700' },
     { label: 'Hoàn thành', value: parent.taskHistory.summary?.completed ?? 0, icon: CheckCircle2, tone: 'bg-emerald-100 text-emerald-700' },
     { label: 'Đang chờ', value: parent.taskHistory.summary?.pending ?? 0, icon: Clock3, tone: 'bg-sky-100 text-sky-700' },
-    { label: 'Bỏ qua', value: parent.taskHistory.summary?.skipped ?? 0, icon: SkipForward, tone: 'bg-amber-100 text-amber-800' },
+    { label: 'Chưa hoàn thành', value: parent.taskHistory.summary?.incomplete ?? 0, icon: CircleDashed, tone: 'bg-amber-100 text-amber-800' },
 ])
 
 function daysAgo(amount) {
@@ -100,7 +100,7 @@ function statusLabel(status) {
     return {
         completed: 'Hoàn thành',
         pending: 'Đang chờ',
-        skipped: 'Bỏ qua',
+        incomplete: 'Chưa hoàn thành',
     }[status] || status
 }
 
@@ -108,7 +108,7 @@ function statusClass(status) {
     return {
         completed: 'bg-emerald-50 text-emerald-700 ring-emerald-100',
         pending: 'bg-sky-50 text-sky-700 ring-sky-100',
-        skipped: 'bg-amber-50 text-amber-800 ring-amber-100',
+        incomplete: 'bg-amber-50 text-amber-800 ring-amber-100',
     }[status] || 'bg-slate-100 text-slate-600 ring-slate-200'
 }
 
@@ -194,7 +194,7 @@ onMounted(async () => {
             <div>
                 <p class="admin-section-title">Theo dõi</p>
                 <h1 class="mt-1 text-3xl font-bold">Lịch sử việc làm</h1>
-                <p class="mt-2 max-w-2xl text-sm font-semibold text-slate-500">Xem lại các nhiệm vụ đã giao, hoàn thành, đang chờ hoặc đã bỏ qua của từng bé.</p>
+                <p class="mt-2 max-w-2xl text-sm font-semibold text-slate-500">Xem lại các nhiệm vụ đã giao, hoàn thành, đang chờ hoặc chưa hoàn thành của từng bé.</p>
             </div>
         </div>
 
@@ -259,7 +259,7 @@ onMounted(async () => {
                         <option value="">Tất cả</option>
                         <option value="completed">Hoàn thành</option>
                         <option value="pending">Đang chờ</option>
-                        <option value="skipped">Bỏ qua</option>
+                        <option value="incomplete">Chưa hoàn thành</option>
                     </select>
                 </label>
                 <BaseButton variant="secondary" class="w-full" @click="resetFilters">

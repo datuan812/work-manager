@@ -6,5 +6,5 @@ enum DailyTaskStatus: string
 {
     case PENDING = 'pending';
     case COMPLETED = 'completed';
-    case SKIPPED = 'skipped';
+    case INCOMPLETE = 'incomplete';
 }
