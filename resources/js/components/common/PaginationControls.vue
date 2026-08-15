@@ -15,9 +15,12 @@ const props = defineProps({
         }),
     },
     loading: { type: Boolean, default: false },
+    showPerPage: { type: Boolean, default: false },
+    perPage: { type: [Number, String], default: 25 },
+    perPageOptions: { type: Array, default: () => [10, 25, 50, 100] },
 })
 
-const emit = defineEmits(['change'])
+const emit = defineEmits(['change', 'update:perPage'])
 
 const currentPage = computed(() => Number(props.meta?.current_page || 1))
 const lastPage = computed(() => Number(props.meta?.last_page || 1))
@@ -40,6 +43,10 @@ function goTo(page) {
 
     emit('change', page)
 }
+
+function changePerPage(event) {
+    emit('update:perPage', Number(event.target.value))
+}
 </script>
 
 <template>
@@ -47,10 +54,23 @@ function goTo(page) {
         v-if="total > 0"
         class="flex flex-col gap-3 border-t border-slate-100 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
     >
-        <p class="text-sm font-semibold text-slate-500">
-            Hiển thị <span class="font-bold text-slate-900">{{ from }}</span>-<span class="font-bold text-slate-900">{{ to }}</span>
-            trong <span class="font-bold text-slate-900">{{ total }}</span> dòng
-        </p>
+        <div class="flex flex-wrap items-center gap-3">
+            <p class="text-sm font-semibold text-slate-500">
+                Hiển thị <span class="font-bold text-slate-900">{{ from }}</span>-<span class="font-bold text-slate-900">{{ to }}</span>
+                trong <span class="font-bold text-slate-900">{{ total }}</span> dòng
+            </p>
+
+            <label v-if="showPerPage" class="flex items-center gap-2 text-sm font-semibold text-slate-500">
+                <select
+                    :value="perPage"
+                    :disabled="loading"
+                    class="h-9 rounded-xl border border-slate-200 bg-white px-2 text-sm font-bold text-slate-900 outline-none transition focus:border-sky-500 focus:ring-3 focus:ring-sky-100 disabled:cursor-not-allowed disabled:opacity-60"
+                    @change="changePerPage"
+                >
+                    <option v-for="option in perPageOptions" :key="option" :value="option">{{ option }}</option>
+                </select>
+            </label>
+        </div>
 
         <div class="flex items-center gap-1">
             <button

@@ -57,9 +57,9 @@ function toggleSelectAllTasks() {
                 <div>
                     <p class="admin-section-title">Giao nhiệm vụ</p>
                     <h2 class="mt-1 text-2xl font-bold">{{ dateCount }} ngày</h2>
-                    <p class="mt-1 text-sm font-bold text-slate-600">
+                    <!-- <p class="mt-1 text-sm font-bold text-slate-600">
                         {{ dateSummary }}
-                    </p>
+                    </p> -->
                     <p
                         v-if="datePreview"
                         class="mt-1 text-xs font-semibold text-slate-400"
@@ -198,7 +198,7 @@ function toggleSelectAllTasks() {
                     >Hủy</BaseButton
                 >
                 <BaseButton :disabled="!canSave" @click="emit('save')"
-                    >Lưu thay đổi</BaseButton
+                    >Giao</BaseButton
                 >
             </div>
         </section>

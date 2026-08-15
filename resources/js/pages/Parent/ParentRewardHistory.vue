@@ -1,6 +1,6 @@
 <script setup>
-import { computed, onMounted, reactive } from 'vue'
-import { Gift, Search, Sparkles, Star, Users } from 'lucide-vue-next'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { CalendarDays, Gift, RotateCcw, Sparkles, Star, Users } from 'lucide-vue-next'
 import ParentLayout from '../../layouts/ParentLayout.vue'
 import BaseButton from '../../components/common/BaseButton.vue'
 import LoadingState from '../../components/common/LoadingState.vue'
@@ -15,6 +15,10 @@ const filters = reactive({
     per_page: 25,
     page: 1,
 })
+const startDateInput = ref(formatDateInput(filters.start_date))
+const endDateInput = ref(formatDateInput(filters.end_date))
+const startDatePicker = ref(null)
+const endDatePicker = ref(null)
 const summaryCards = computed(() => [
     { label: 'Lượt đổi', value: parent.rewardHistory.summary?.total ?? 0, icon: Gift, tone: 'bg-sky-100 text-sky-700' },
     { label: 'Sao đã dùng', value: parent.rewardHistory.summary?.points_spent ?? 0, icon: Star, tone: 'bg-amber-100 text-amber-800' },
@@ -34,6 +38,41 @@ function dateKey(date) {
     return `${year}-${month}-${day}`
 }
 
+function isValidDateParts(day, month, year) {
+    const date = new Date(year, month - 1, day)
+    return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day
+}
+
+function normalizeDate(value) {
+    if (!value) return ''
+
+    const date = String(value).trim()
+
+    if (/^\d{4}-\d{2}-\d{2}/.test(date)) {
+        return date.slice(0, 10)
+    }
+
+    const match = date.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/)
+
+    if (match) {
+        const [, day, month, year] = match
+        if (!isValidDateParts(Number(day), Number(month), Number(year))) return ''
+
+        return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`
+    }
+
+    return ''
+}
+
+function formatDateInput(value) {
+    if (!value) return ''
+
+    const [year, month, day] = String(value).slice(0, 10).split('-')
+    if (!year || !month || !day) return ''
+
+    return `${day.padStart(2, '0')}/${month.padStart(2, '0')}/${year}`
+}
+
 function formatDateTime(value) {
     if (!value) return '—'
 
@@ -46,6 +85,49 @@ function formatDateTime(value) {
     }).format(new Date(value))
 }
 
+function openStartDatePicker() {
+    if (typeof startDatePicker.value?.showPicker === 'function') {
+        startDatePicker.value.showPicker()
+        return
+    }
+    startDatePicker.value?.click()
+}
+function openEndDatePicker() {
+    if (typeof endDatePicker.value?.showPicker === 'function') {
+        endDatePicker.value.showPicker()
+        return
+    }
+    endDatePicker.value?.click()
+}
+function pickStartDate(event) {
+    filters.start_date = event.target.value
+    startDateInput.value = formatDateInput(event.target.value)
+}
+function pickEndDate(event) {
+    filters.end_date = event.target.value
+    endDateInput.value = formatDateInput(event.target.value)
+}
+function syncStartDate() {
+    const normalized = normalizeDate(startDateInput.value)
+    if (!normalized) {
+        startDateInput.value = formatDateInput(filters.start_date)
+        return
+    }
+
+    filters.start_date = normalized
+    startDateInput.value = formatDateInput(normalized)
+}
+function syncEndDate() {
+    const normalized = normalizeDate(endDateInput.value)
+    if (!normalized) {
+        endDateInput.value = formatDateInput(filters.end_date)
+        return
+    }
+
+    filters.end_date = normalized
+    endDateInput.value = formatDateInput(normalized)
+}
+
 async function loadHistory(page = filters.page) {
     filters.page = page
 
@@ -55,9 +137,22 @@ async function loadHistory(page = filters.page) {
     })
 }
 
-function applyFilters() {
-    return loadHistory(1)
+function resetFilters() {
+    Object.assign(filters, {
+        start_date: dateKey(daysAgo(30)),
+        end_date: dateKey(new Date()),
+        user_id: '',
+        per_page: 25,
+        page: 1,
+    })
+    startDateInput.value = formatDateInput(filters.start_date)
+    endDateInput.value = formatDateInput(filters.end_date)
 }
+
+watch(
+    () => [filters.start_date, filters.end_date, filters.user_id, filters.per_page],
+    () => loadHistory(1),
+)
 
 onMounted(async () => {
     await Promise.all([parent.loadChildren(), loadHistory()])
@@ -91,14 +186,38 @@ onMounted(async () => {
         </div>
 
         <section class="admin-card mt-5 p-4">
-            <div class="grid gap-3 lg:grid-cols-[1fr_1fr_1fr_140px_auto] lg:items-end">
+            <div class="grid gap-3 lg:grid-cols-[1fr_1fr_1fr_auto] lg:items-end">
                 <label class="block">
                     <span class="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Từ ngày</span>
-                    <input v-model="filters.start_date" type="date" class="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900" />
+                    <div class="relative">
+                        <input
+                            v-model="startDateInput"
+                            inputmode="numeric"
+                            placeholder="dd/mm/yyyy"
+                            class="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 pr-12 text-sm font-semibold text-slate-900 outline-none transition focus:border-sky-500 focus:ring-3 focus:ring-sky-100"
+                            @blur="syncStartDate"
+                        />
+                        <input ref="startDatePicker" :value="filters.start_date" type="date" class="pointer-events-none absolute inset-0 opacity-0" tabindex="-1" @input="pickStartDate" />
+                        <button type="button" title="Chọn ngày" class="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-sky-700" @click="openStartDatePicker">
+                            <CalendarDays class="h-4 w-4" />
+                        </button>
+                    </div>
                 </label>
                 <label class="block">
                     <span class="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Đến ngày</span>
-                    <input v-model="filters.end_date" type="date" class="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900" />
+                    <div class="relative">
+                        <input
+                            v-model="endDateInput"
+                            inputmode="numeric"
+                            placeholder="dd/mm/yyyy"
+                            class="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 pr-12 text-sm font-semibold text-slate-900 outline-none transition focus:border-sky-500 focus:ring-3 focus:ring-sky-100"
+                            @blur="syncEndDate"
+                        />
+                        <input ref="endDatePicker" :value="filters.end_date" type="date" class="pointer-events-none absolute inset-0 opacity-0" tabindex="-1" @input="pickEndDate" />
+                        <button type="button" title="Chọn ngày" class="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-sky-700" @click="openEndDatePicker">
+                            <CalendarDays class="h-4 w-4" />
+                        </button>
+                    </div>
                 </label>
                 <label class="block">
                     <span class="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Bé</span>
@@ -107,18 +226,9 @@ onMounted(async () => {
                         <option v-for="child in parent.children" :key="child.id" :value="child.id">{{ child.name }}</option>
                     </select>
                 </label>
-                <label class="block">
-                    <span class="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Mỗi trang</span>
-                    <select v-model="filters.per_page" class="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900">
-                        <option :value="10">10</option>
-                        <option :value="25">25</option>
-                        <option :value="50">50</option>
-                        <option :value="100">100</option>
-                    </select>
-                </label>
-                <BaseButton class="w-full" @click="applyFilters">
-                    <Search class="h-4 w-4" />
-                    Lọc
+                <BaseButton variant="secondary" class="w-full" @click="resetFilters">
+                    <RotateCcw class="h-4 w-4" />
+                    Làm mới lọc
                 </BaseButton>
             </div>
         </section>
@@ -175,7 +285,10 @@ onMounted(async () => {
             <PaginationControls
                 :meta="parent.rewardHistory.meta"
                 :loading="parent.loadingStates.rewardHistory"
+                show-per-page
+                :per-page="filters.per_page"
                 @change="loadHistory"
+                @update:per-page="(value) => { filters.per_page = value }"
             />
         </section>
     </ParentLayout>

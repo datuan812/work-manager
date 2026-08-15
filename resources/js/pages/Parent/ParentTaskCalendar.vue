@@ -5,7 +5,7 @@ import BaseButton from "../../components/common/BaseButton.vue";
 import TaskAssignModal from "../../components/parent/TaskAssignModal.vue";
 import { useParentStore } from "../../stores/parent.store";
 import { useToastStore } from "../../stores/toast.store";
-import { ChevronLeft, ChevronRight } from "lucide-vue-next";
+import { Check, CalendarDays, ChevronLeft, ChevronRight, RotateCcw } from "lucide-vue-next";
 
 const parent = useParentStore();
 const toast = useToastStore();
@@ -16,9 +16,14 @@ const modalDate = ref(null);
 const currentMonth = ref(monthDateFromKey(vietnamTodayKey()));
 const quickRange = ref({
     start: monthStartKeyFromDate(currentMonth.value),
-    end: vietnamTodayKey(),
+    end: monthEndKeyFromDate(currentMonth.value),
     mode: "all",
 });
+const quickStartInput = ref(formatDateInput(quickRange.value.start));
+const quickEndInput = ref(formatDateInput(quickRange.value.end));
+const quickStartPicker = ref(null);
+const quickEndPicker = ref(null);
+const quickSelectApplied = ref(false);
 
 const weekDays = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
 const quickModes = [
@@ -106,6 +111,17 @@ const activeTaskTemplates = computed(() => {
 
     return [...templates.values()];
 });
+const filteredDateKeys = computed(
+    () =>
+        new Set(
+            datesInRange(
+                quickRange.value.start,
+                quickRange.value.end,
+                quickRange.value.mode,
+                false,
+            ),
+        ),
+);
 const calendarDays = computed(() => {
     const year = currentMonth.value.getFullYear();
     const month = currentMonth.value.getMonth();
@@ -133,6 +149,7 @@ const calendarDays = computed(() => {
             isLocked: isLockedDate(key),
             isToday: key === todayKey.value,
             isSelected: selectedDates.value.includes(key),
+            isInFilter: filteredDateKeys.value.has(key),
         });
     }
 
@@ -173,6 +190,10 @@ function monthStartKeyFromDate(date) {
     return dateKey(new Date(date.getFullYear(), date.getMonth(), 1));
 }
 
+function monthEndKeyFromDate(date) {
+    return dateKey(new Date(date.getFullYear(), date.getMonth() + 1, 0));
+}
+
 function dateKey(date) {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -191,23 +212,86 @@ function formatDate(key) {
     }).format(new Date(year, month - 1, day));
 }
 
-function parseDisplayDate(value) {
-    const match = String(value).trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+function isValidDateParts(day, month, year) {
+    const date = new Date(year, month - 1, day);
+    return (
+        date.getFullYear() === year &&
+        date.getMonth() === month - 1 &&
+        date.getDate() === day
+    );
+}
 
-    if (!match) return null;
+function normalizeDate(value) {
+    if (!value) return "";
 
-    const [, day, month, year] = match;
-    const date = new Date(Number(year), Number(month) - 1, Number(day));
+    const date = String(value).trim();
 
-    if (
-        date.getFullYear() !== Number(year) ||
-        date.getMonth() !== Number(month) - 1 ||
-        date.getDate() !== Number(day)
-    ) {
-        return null;
+    if (/^\d{4}-\d{2}-\d{2}/.test(date)) {
+        return date.slice(0, 10);
     }
 
-    return dateKey(date);
+    const match = date.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+
+    if (match) {
+        const [, day, month, year] = match;
+        if (!isValidDateParts(Number(day), Number(month), Number(year))) return "";
+
+        return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+    }
+
+    return "";
+}
+
+function formatDateInput(value) {
+    if (!value) return "";
+
+    const [year, month, day] = String(value).slice(0, 10).split("-");
+    if (!year || !month || !day) return "";
+
+    return `${day.padStart(2, "0")}/${month.padStart(2, "0")}/${year}`;
+}
+
+function openQuickStartPicker() {
+    if (typeof quickStartPicker.value?.showPicker === "function") {
+        quickStartPicker.value.showPicker();
+        return;
+    }
+    quickStartPicker.value?.click();
+}
+function openQuickEndPicker() {
+    if (typeof quickEndPicker.value?.showPicker === "function") {
+        quickEndPicker.value.showPicker();
+        return;
+    }
+    quickEndPicker.value?.click();
+}
+function pickQuickStartDate(event) {
+    quickRange.value.start = event.target.value;
+    quickStartInput.value = formatDateInput(event.target.value);
+}
+function pickQuickEndDate(event) {
+    quickRange.value.end = event.target.value;
+    quickEndInput.value = formatDateInput(event.target.value);
+}
+function syncQuickStartDate() {
+    const normalized = normalizeDate(quickStartInput.value);
+    if (!normalized) {
+        quickStartInput.value = formatDateInput(quickRange.value.start);
+        return;
+    }
+
+    quickRange.value.start = normalized;
+    quickStartInput.value = formatDateInput(normalized);
+}
+function syncQuickEndDate() {
+    const normalized = normalizeDate(quickEndInput.value);
+    if (!normalized) {
+        quickEndInput.value = formatDateInput(quickRange.value.end);
+        return;
+    }
+
+    quickRange.value.end = normalized;
+    quickEndInput.value = formatDateInput(normalized);
 }
 
 function changeMonth(amount) {
@@ -216,36 +300,26 @@ function changeMonth(amount) {
         currentMonth.value.getMonth() + amount,
         1,
     );
-    selectedDates.value = [];
-    quickRange.value = {
-        ...quickRange.value,
-        start: dateKey(
-            new Date(
-                currentMonth.value.getFullYear(),
-                currentMonth.value.getMonth(),
-                1,
-            ),
-        ),
-        end: dateKey(
-            new Date(
-                currentMonth.value.getFullYear(),
-                currentMonth.value.getMonth() + 1,
-                0,
-            ),
-        ),
-    };
+    resetQuickRangeToMonth();
     closeModal();
 }
 
 function goToCurrentMonth() {
     currentMonth.value = monthDateFromKey(vietnamTodayKey());
+    resetQuickRangeToMonth();
+    closeModal();
+}
+
+function resetQuickRangeToMonth() {
     selectedDates.value = [];
+    quickSelectApplied.value = false;
     quickRange.value = {
         ...quickRange.value,
         start: monthStartKey.value,
         end: monthEndKey.value,
     };
-    closeModal();
+    quickStartInput.value = formatDateInput(quickRange.value.start);
+    quickEndInput.value = formatDateInput(quickRange.value.end);
 }
 
 function toggleDate(key) {
@@ -260,10 +334,10 @@ function toggleDate(key) {
 }
 
 function isLockedDate(key) {
-    return key <= todayKey.value;
+    return key < todayKey.value;
 }
 
-function datesInRange(startKey, endKey, mode = "all") {
+function datesInRange(startKey, endKey, mode = "all", excludeLocked = true) {
     if (!startKey || !endKey) return [];
 
     const start = dateFromKey(startKey);
@@ -280,9 +354,10 @@ function datesInRange(startKey, endKey, mode = "all") {
             mode === "all" ||
             (mode === "weekdays" && dayOfWeek >= 1 && dayOfWeek <= 5) ||
             (mode === "weekends" && [0, 6].includes(dayOfWeek));
+        const key = dateKey(cursor);
 
-        if (matchesMode && !isLockedDate(dateKey(cursor))) {
-            dates.push(dateKey(cursor));
+        if (matchesMode && (!excludeLocked || !isLockedDate(key))) {
+            dates.push(key);
         }
 
         cursor.setDate(cursor.getDate() + 1);
@@ -291,11 +366,26 @@ function datesInRange(startKey, endKey, mode = "all") {
     return dates;
 }
 
-function applyQuickRange(replace = true) {
+function toggleQuickSelect() {
+    if (quickSelectApplied.value) {
+        selectedDates.value = [];
+        quickSelectApplied.value = false;
+        quickRange.value = {
+            ...quickRange.value,
+            start: monthStartKey.value,
+            end: monthEndKey.value,
+            mode: "all",
+        };
+        quickStartInput.value = formatDateInput(quickRange.value.start);
+        quickEndInput.value = formatDateInput(quickRange.value.end);
+        return;
+    }
+
     const dates = datesInRange(
         quickRange.value.start,
         quickRange.value.end,
         quickRange.value.mode,
+        true,
     );
 
     if (!dates.length) {
@@ -303,23 +393,8 @@ function applyQuickRange(replace = true) {
         return;
     }
 
-    selectedDates.value = replace
-        ? dates
-        : [...new Set([...selectedDates.value, ...dates])].sort();
-}
-
-function selectCurrentMonth() {
-    quickRange.value = {
-        ...quickRange.value,
-        start: monthStartKey.value,
-        end: monthEndKey.value,
-        mode: "all",
-    };
-    applyQuickRange();
-}
-
-function clearSelectedDates() {
-    selectedDates.value = [];
+    selectedDates.value = dates;
+    quickSelectApplied.value = true;
 }
 
 function taskTemplateKey(task) {
@@ -351,19 +426,37 @@ function clearTaskSelection() {
     selectedTaskIds.value = [];
 }
 
-function openModal(key) {
-    modalDate.value = key;
-    const dates = selectedDates.value.length ? selectedDates.value : [key];
+function openModal(key = null) {
+    const dates = selectedDates.value.length
+        ? selectedDates.value
+        : key
+          ? [key]
+          : [];
+
+    if (!dates.length) {
+        toast.show("Vui lòng chọn ít nhất một ngày.");
+        return;
+    }
+
+    modalDate.value = dates[0];
+
     const assignments = dates.flatMap(
         (date) => parent.taskCalendar.by_date?.[date] ?? [],
     );
+
     const templateMap = new Map(
-        activeTaskTemplates.value.map((task) => [taskTemplateKey(task), task.id]),
+        activeTaskTemplates.value.map((task) => [
+            taskTemplateKey(task),
+            task.id,
+        ]),
     );
+
     const templateIds = new Set();
 
     assignments.forEach((assignment) => {
-        const templateId = templateMap.get(taskTemplateKey(assignment.task));
+        const templateId = templateMap.get(
+            taskTemplateKey(assignment.task),
+        );
 
         if (templateId) {
             templateIds.add(templateId);
@@ -371,8 +464,11 @@ function openModal(key) {
     });
 
     selectedTaskIds.value = [...templateIds];
+
     selectedChildIds.value = [
-        ...new Set(assignments.map((assignment) => assignment.user_id)),
+        ...new Set(
+            assignments.map((assignment) => assignment.user_id),
+        ),
     ];
 }
 
@@ -435,8 +531,9 @@ async function assignSelectedTasks() {
         calendarParams.value,
     );
 
-    toast.show("Đã lưu thay đổi");
+    toast.show("Đã giao nhiệm vụ thành công.");
     selectedDates.value = [];
+    quickSelectApplied.value = false;
     closeModal();
 }
 
@@ -455,6 +552,12 @@ async function removeAssignment(assignment) {
 }
 
 watch(currentMonth, loadCalendar);
+watch(
+    () => [quickRange.value.start, quickRange.value.end, quickRange.value.mode],
+    () => {
+        quickSelectApplied.value = false;
+    },
+);
 
 onMounted(async () => {
     await Promise.all([parent.loadChildren(), parent.loadTasks()]);
@@ -526,31 +629,69 @@ onMounted(async () => {
             </div>
 
             <div
-                class="grid gap-3 border-b border-slate-200 bg-white p-4 lg:grid-cols-6 lg:items-end"
+                class="grid gap-3 border-b border-slate-200 bg-white p-4 lg:grid-cols-5 lg:items-end"
             >
                 <label class="block">
                     <span
                         class="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500"
                         >Từ ngày</span
                     >
-                    <input
-                        v-model="quickRange.start"
-                        type="date"
-                        placeholder="dd/mm/yyyy"
-                        class="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900"
-                    />
+                    <div class="relative">
+                        <input
+                            v-model="quickStartInput"
+                            inputmode="numeric"
+                            placeholder="dd/mm/yyyy"
+                            class="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 pr-12 text-sm font-semibold text-slate-900 outline-none transition focus:border-sky-500 focus:ring-3 focus:ring-sky-100"
+                            @blur="syncQuickStartDate"
+                        />
+                        <input
+                            ref="quickStartPicker"
+                            :value="quickRange.start"
+                            type="date"
+                            class="pointer-events-none absolute inset-0 opacity-0"
+                            tabindex="-1"
+                            @input="pickQuickStartDate"
+                        />
+                        <button
+                            type="button"
+                            title="Chọn ngày"
+                            class="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-sky-700"
+                            @click="openQuickStartPicker"
+                        >
+                            <CalendarDays class="h-4 w-4" />
+                        </button>
+                    </div>
                 </label>
                 <label class="block">
                     <span
                         class="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500"
                         >Đến ngày</span
                     >
-                    <input
-                        v-model="quickRange.end"
-                        type="date"
-                        placeholder="dd/mm/yyyy"
-                        class="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900"
-                    />
+                    <div class="relative">
+                        <input
+                            v-model="quickEndInput"
+                            inputmode="numeric"
+                            placeholder="dd/mm/yyyy"
+                            class="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 pr-12 text-sm font-semibold text-slate-900 outline-none transition focus:border-sky-500 focus:ring-3 focus:ring-sky-100"
+                            @blur="syncQuickEndDate"
+                        />
+                        <input
+                            ref="quickEndPicker"
+                            :value="quickRange.end"
+                            type="date"
+                            class="pointer-events-none absolute inset-0 opacity-0"
+                            tabindex="-1"
+                            @input="pickQuickEndDate"
+                        />
+                        <button
+                            type="button"
+                            title="Chọn ngày"
+                            class="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-sky-700"
+                            @click="openQuickEndPicker"
+                        >
+                            <CalendarDays class="h-4 w-4" />
+                        </button>
+                    </div>
                 </label>
                 <label class="block">
                     <span
@@ -570,18 +711,21 @@ onMounted(async () => {
                         </option>
                     </select>
                 </label>
-                <BaseButton @click="applyQuickRange()">Lọc</BaseButton>
                 <BaseButton
-                    variant="secondary"
-                    @click="selectCurrentMonth"
-                    >Chọn cả tháng</BaseButton
+                    :variant="quickSelectApplied ? 'secondary' : 'primary'"
+                    @click="toggleQuickSelect"
                 >
+                    <component :is="quickSelectApplied ? RotateCcw : Check" class="h-4 w-4" />
+                    {{ quickSelectApplied ? "Làm mới lọc" : "Chọn tất cả" }}
+                </BaseButton>
                 <BaseButton
-                    variant="danger"
-                    class="!bg-red-100 !text-red-500 !border-red-300 hover:!bg-red-200"
-                    @click="clearSelectedDates"
+                    variant="primary"
+                    :disabled="!selectedDates.length"
+                    :class="!selectedDates.length ? '!cursor-not-allowed' : 'cursor-pointer'"
+                    @click="openModal()"
                 >
-                    ❌ Bỏ chọn
+                    <Check class="mr-1.5 h-4 w-4" />
+                    Giao nhiệm vụ
                 </BaseButton>
             </div>
 
@@ -623,22 +767,29 @@ onMounted(async () => {
                     class="min-h-40 border-b border-r border-slate-100 p-2 text-left transition"
                     :class="{
                         'bg-slate-50/70': day.blank,
+                        'cursor-not-allowed bg-slate-50 opacity-40':
+                            !day.blank && !day.isInFilter,
                         'cursor-pointer bg-sky-50 ring-2 ring-inset ring-sky-200 hover:bg-sky-100':
-                            !day.blank && day.isSelected,
+                            !day.blank && day.isInFilter && day.isSelected,
                         'cursor-pointer bg-gray-200 text-slate-400 hover:bg-slate-100':
-                            !day.blank && !day.isSelected && day.isLocked,
+                            !day.blank &&
+                            day.isInFilter &&
+                            !day.isSelected &&
+                            day.isLocked,
                         'cursor-pointer bg-amber-50/80 hover:bg-amber-100/70':
                             !day.blank &&
+                            day.isInFilter &&
                             !day.isSelected &&
                             !day.isLocked &&
                             day.hasAssignments,
                         'cursor-pointer bg-white hover:bg-slate-50':
                             !day.blank &&
+                            day.isInFilter &&
                             !day.isSelected &&
                             !day.isLocked &&
                             !day.hasAssignments,
                     }"
-                    @click="!day.blank && openModal(day.key)"
+                    @click="!day.blank && day.isInFilter && openModal(day.key)"
                 >
                     <template v-if="!day.blank">
                         <div class="flex items-center justify-between gap-2">
@@ -658,13 +809,13 @@ onMounted(async () => {
                                 type="checkbox"
                                 class="h-5 w-5 rounded border-slate-300 text-sky-600 focus:ring-sky-200"
                                 :checked="day.isSelected"
-                                :disabled="day.isLocked"
+                                :disabled="day.isLocked || !day.isInFilter"
                                 @click.stop
                                 @change="toggleDate(day.key)"
                             />
                         </div>
 
-                        <div class="mt-3 grid gap-1">
+                        <div v-if="day.isInFilter" class="mt-3 grid gap-1">
                             <div
                                 v-if="day.isLocked"
                                 class="rounded-lg bg-slate-200 px-2 py-1 text-xs font-bold text-slate-600"
@@ -711,6 +862,12 @@ onMounted(async () => {
                                     </button>
                                 </div>
                             </div>
+                        </div>
+                        <div
+                            v-else
+                            class="mt-3 text-center text-[11px] font-semibold text-slate-400"
+                        >
+                            Ngoài bộ lọc
                         </div>
                     </template>
                 </div>

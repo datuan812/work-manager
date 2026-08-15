@@ -76,45 +76,6 @@ onMounted(() => parent.loadDashboard())
                         <p class="mt-1 text-sm font-bold text-slate-950">{{ topChild.name }} · {{ topChild.completion_percent }}%</p>
                     </div>
                 </div>
-
-                <div class="mt-5 grid gap-3 md:grid-cols-4">
-                    <article class="rounded-xl bg-sky-50 p-4 ring-1 ring-sky-100">
-                        <div class="flex items-center justify-between gap-3">
-                            <div>
-                                <p class="text-xs font-bold uppercase text-slate-500">Tiến độ chung</p>
-                                <p class="mt-1 text-2xl font-bold text-slate-950">{{ averageCompletion }}%</p>
-                            </div>
-                            <Trophy class="h-5 w-5 text-sky-700" />
-                        </div>
-                    </article>
-                    <article class="rounded-xl bg-emerald-50 p-4 ring-1 ring-emerald-100">
-                        <div class="flex items-center justify-between gap-3">
-                            <div>
-                                <p class="text-xs font-bold uppercase text-slate-500">Đã hoàn thành</p>
-                                <p class="mt-1 text-2xl font-bold text-slate-950">{{ totalCompleted }}/{{ totalTasks }}</p>
-                            </div>
-                            <ListChecks class="h-5 w-5 text-emerald-700" />
-                        </div>
-                    </article>
-                    <article class="rounded-xl bg-rose-50 p-4 ring-1 ring-rose-100">
-                        <div class="flex items-center justify-between gap-3">
-                            <div>
-                                <p class="text-xs font-bold uppercase text-slate-500">Tổng sao</p>
-                                <p class="mt-1 text-2xl font-bold text-slate-950">{{ children.reduce((sum, child) => sum + Number(child.points || 0), 0) }}</p>
-                            </div>
-                            <Star class="h-5 w-5 text-rose-700" />
-                        </div>
-                    </article>
-                    <article class="rounded-xl bg-violet-50 p-4 ring-1 ring-violet-100">
-                        <div class="flex items-center justify-between gap-3">
-                            <div>
-                                <p class="text-xs font-bold uppercase text-slate-500">Số bé</p>
-                                <p class="mt-1 text-2xl font-bold text-slate-950">{{ children.length }}</p>
-                            </div>
-                            <Users class="h-5 w-5 text-violet-700" />
-                        </div>
-                    </article>
-                </div>
             </div>
 
             <div class="grid gap-5 p-5 xl:grid-cols-[1.4fr_1fr]">
