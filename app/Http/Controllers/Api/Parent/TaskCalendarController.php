@@ -6,6 +6,7 @@ use App\Enums\DailyTaskStatus;
 use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Models\DailyTask;
+use App\Models\DailyTaskSubmission;
 use App\Models\Task;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -110,15 +111,24 @@ class TaskCalendarController extends Controller
     {
         abort_unless($dailyTask->user->isChild(), 404);
 
-        if ($dailyTask->date->lte(today('Asia/Ho_Chi_Minh'))) {
-            throw ValidationException::withMessages([
-                'daily_task' => 'Không thể thay đổi nhiệm vụ trong ngày đã đến hạn hoặc đã qua.',
-            ]);
-        }
-
         if ($dailyTask->status === DailyTaskStatus::COMPLETED) {
             throw ValidationException::withMessages([
                 'daily_task' => 'Không thể xóa nhiệm vụ đã hoàn thành.',
+            ]);
+        }
+
+        if (DailyTaskSubmission::query()
+            ->where('user_id', $dailyTask->user_id)
+            ->whereDate('date', $dailyTask->date)
+            ->exists()) {
+            throw ValidationException::withMessages([
+                'daily_task' => 'Không thể xóa nhiệm vụ đã được chốt.',
+            ]);
+        }
+
+        if ($dailyTask->date->lte(today('Asia/Ho_Chi_Minh'))) {
+            throw ValidationException::withMessages([
+                'daily_task' => 'Không thể thay đổi nhiệm vụ trong ngày đã đến hạn hoặc đã qua.',
             ]);
         }
 

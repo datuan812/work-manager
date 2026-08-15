@@ -1,7 +1,8 @@
 <script setup>
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onMounted, reactive, ref, watch } from "vue";
 import ParentLayout from "../../layouts/ParentLayout.vue";
 import BaseButton from "../../components/common/BaseButton.vue";
+import ConfirmDialog from "../../components/common/ConfirmDialog.vue";
 import TaskAssignModal from "../../components/parent/TaskAssignModal.vue";
 import { useParentStore } from "../../stores/parent.store";
 import { useToastStore } from "../../stores/toast.store";
@@ -24,6 +25,7 @@ const quickEndInput = ref(formatDateInput(quickRange.value.end));
 const quickStartPicker = ref(null);
 const quickEndPicker = ref(null);
 const quickSelectApplied = ref(false);
+const confirmDelete = reactive({ show: false, assignment: null });
 
 const weekDays = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
 const quickModes = [
@@ -523,32 +525,41 @@ async function assignSelectedTasks() {
               }
             : null;
 
-    await parent.saveTaskAssignmentChanges(
-        {
-            deleteIds,
-            assignPayload,
-        },
-        calendarParams.value,
-    );
+    try {
+        await parent.saveTaskAssignmentChanges(
+            {
+                deleteIds,
+                assignPayload,
+            },
+            calendarParams.value,
+        );
 
-    toast.show("Đã giao nhiệm vụ thành công.");
-    selectedDates.value = [];
-    quickSelectApplied.value = false;
-    closeModal();
+        toast.show("Đã giao nhiệm vụ thành công.");
+        selectedDates.value = [];
+        quickSelectApplied.value = false;
+        closeModal();
+    } catch (error) {
+        toast.show(error.message, "error");
+    }
 }
 
 async function removeAssignment(assignment) {
-    const date = assignment.date?.slice(0, 10);
+    confirmDelete.assignment = assignment;
+    confirmDelete.show = true;
+}
 
-    if (date && isLockedDate(date)) {
-        toast.show("Không thể thay đổi nhiệm vụ trong ngày đã đến hạn hoặc đã qua.");
-        return;
+async function confirmRemoveAssignment() {
+    const assignment = confirmDelete.assignment;
+    confirmDelete.assignment = null;
+
+    if (!assignment) return;
+
+    try {
+        await parent.deleteTaskAssignment(assignment.id, calendarParams.value);
+        toast.show("Đã xóa nhiệm vụ khỏi ngày này");
+    } catch (error) {
+        toast.show(error.message, "error");
     }
-
-    if (!window.confirm("Bạn có chắc muốn xóa nhiệm vụ khỏi ngày này?")) return;
-
-    await parent.deleteTaskAssignment(assignment.id, calendarParams.value);
-    toast.show("Đã xóa nhiệm vụ khỏi ngày này");
 }
 
 watch(currentMonth, loadCalendar);
@@ -851,11 +862,7 @@ onMounted(async () => {
                                     >
                                     <button
                                         type="button"
-                                        class="shrink-0 text-xs font-bold text-red-600 opacity-0 transition group-hover:opacity-100 disabled:text-slate-400 disabled:opacity-100"
-                                        :disabled="
-                                            assignment.status === 'completed' ||
-                                            day.isLocked
-                                        "
+                                        class="shrink-0 text-xs font-bold text-red-600 opacity-0 transition group-hover:opacity-100"
                                         @click.stop="removeAssignment(assignment)"
                                     >
                                         Xóa
@@ -891,6 +898,15 @@ onMounted(async () => {
             @select-all-tasks="selectAllTasks"
             @clear-tasks="clearTaskSelection"
             @save="assignSelectedTasks"
+        />
+
+        <ConfirmDialog
+            v-model="confirmDelete.show"
+            title="Xóa nhiệm vụ"
+            message="Bạn có chắc muốn xóa nhiệm vụ khỏi ngày này?"
+            confirm-text="Xóa"
+            cancel-text="Hủy"
+            @confirm="confirmRemoveAssignment"
         />
     </ParentLayout>
 </template>
