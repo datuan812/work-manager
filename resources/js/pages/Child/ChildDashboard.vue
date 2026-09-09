@@ -312,7 +312,7 @@ onMounted(load);
                                     }}
                                 </p>
                             </div>
-                            <div
+                            <!-- <div
                                 class="rounded-2xl bg-amber-50 p-4 ring-1 ring-amber-100"
                             >
                                 <p
@@ -339,7 +339,7 @@ onMounted(load);
                                 >
                                     🔥 {{ dashboard.streak }}
                                 </p>
-                            </div>
+                            </div> -->
                         </div>
                         <div class="mt-6">
                             <ProgressBar :value="displayedProgress.percent" />
