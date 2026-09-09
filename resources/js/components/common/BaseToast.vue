@@ -10,7 +10,7 @@ const { visible, message, type } = storeToRefs(toast)
 <template>
     <div
         v-if="visible"
-        class="fixed left-1/2 top-5 z-50 flex min-w-[280px] max-w-[calc(100vw-2rem)] -translate-x-1/2 items-start gap-3 rounded-2xl border bg-white px-4 py-3 text-sm font-bold text-slate-800 shadow-2xl shadow-slate-900/15"
+        class="fixed left-1/2 top-5 z-[9999] flex min-w-[280px] max-w-[calc(100vw-2rem)] -translate-x-1/2 items-center gap-3 rounded-2xl border bg-white px-4 py-3 text-sm font-bold text-slate-800 shadow-2xl shadow-slate-900/15"
         :class="type === 'error' ? 'border-red-100 ring-1 ring-red-100' : 'border-emerald-100 ring-1 ring-emerald-100'"
         role="status"
     >

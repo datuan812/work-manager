@@ -13,6 +13,7 @@ const props = defineProps({
     selectedTaskIds: { type: Array, default: () => [] },
     children: { type: Array, default: () => [] },
     selectedChildIds: { type: Array, default: () => [] },
+    activeChildId: { type: [Number, String], default: null },
 });
 
 const emit = defineEmits([
@@ -34,7 +35,7 @@ const canSave = computed(
     () =>
         !props.hasLockedDates &&
         (props.hasAssignments ||
-            (props.selectedTaskIds.length && props.selectedChildIds.length)),
+            props.selectedChildIds.length),
 );
 
 function toggleSelectAllTasks() {
@@ -92,27 +93,36 @@ function toggleSelectAllTasks() {
                             >{{ selectedChildIds.length }} chọn</span
                         >
                     </div>
+                    <p class="mt-1 text-xs font-semibold text-slate-500">
+                        Chọn từng bé, rồi chọn các nhiệm vụ dành riêng cho bé đó.
+                    </p>
                     <div class="mt-3 grid grid-cols-4 gap-2">
                         <label
                             v-for="child in children"
                             :key="child.id"
                             class="flex min-h-14 items-center gap-3 rounded-xl border px-3 py-2"
                             :class="
-                                selectedChildIds.includes(child.id)
+                                activeChildId === child.id
                                     ? 'border-amber-300 bg-amber-50'
                                     : 'border-slate-200'
                             "
                         >
                             <input
-                                type="checkbox"
+                                type="radio"
+                                name="task-assignment-child"
                                 class="h-5 w-5 rounded border-slate-300 text-amber-500 focus:ring-amber-100"
-                                :checked="selectedChildIds.includes(child.id)"
+                                :checked="activeChildId === child.id"
                                 :disabled="hasLockedDates"
                                 @change="emit('toggle-child', child.id)"
                             />
                             <span
                                 class="min-w-0 flex-1 truncate text-sm font-bold text-slate-950"
                                 >{{ child.name }}</span
+                            >
+                            <span
+                                v-if="selectedChildIds.includes(child.id)"
+                                class="text-[10px] font-bold text-amber-700"
+                                >Đã chọn</span
                             >
                         </label>
                         <div
@@ -134,7 +144,7 @@ function toggleSelectAllTasks() {
                             <button
                                 type="button"
                                 class="rounded-lg px-2 py-1 text-xs font-bold text-sky-700 underline decoration-sky-300 underline-offset-2 transition hover:text-sky-900 disabled:cursor-not-allowed disabled:text-slate-400 disabled:no-underline"
-                                :disabled="hasLockedDates || !tasks.length"
+                                :disabled="hasLockedDates || !tasks.length || !activeChildId"
                                 @click="toggleSelectAllTasks"
                             >
                                 {{
@@ -160,7 +170,7 @@ function toggleSelectAllTasks() {
                                 type="checkbox"
                                 class="h-5 w-5 rounded border-slate-300 text-sky-600 focus:ring-sky-200"
                                 :checked="selectedTaskIds.includes(task.id)"
-                                :disabled="hasLockedDates"
+                                :disabled="hasLockedDates || !activeChildId"
                                 @change="emit('toggle-task', task.id)"
                             />
                             <span

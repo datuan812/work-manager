@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, reactive } from "vue";
+import { computed, onMounted, reactive, ref } from "vue";
 import ParentLayout from "../../layouts/ParentLayout.vue";
 import BaseButton from "../../components/common/BaseButton.vue";
 import BaseInput from "../../components/common/BaseInput.vue";
@@ -11,6 +11,7 @@ import { SquarePen, Trash2 } from "lucide-vue-next";
 
 const parent = useParentStore();
 const toast = useToastStore();
+const searchQuery = ref("");
 const confirmDelete = reactive({ show: false, id: null });
 const form = reactive({
     id: null,
@@ -21,10 +22,21 @@ const form = reactive({
     points: 10,
     is_active: true,
 });
-const errors = reactive({ title: "", icon: "", points: "" });
+const errors = reactive({ title: "", icon: "", points: "", category_id: "" });
+const filteredTasks = computed(() => {
+    const query = searchQuery.value.trim().toLocaleLowerCase("vi-VN");
+
+    if (!query) return parent.tasks;
+
+    return parent.tasks.filter((task) =>
+        [task.title, task.description, task.category?.name]
+            .filter(Boolean)
+            .some((value) => value.toLocaleLowerCase("vi-VN").includes(query)),
+    );
+});
 
 function clearErrors() {
-    Object.assign(errors, { title: "", icon: "", points: "" });
+    Object.assign(errors, { title: "", icon: "", points: "", category_id: "" });
 }
 
 function validateForm() {
@@ -36,6 +48,10 @@ function validateForm() {
 
     if (!String(form.icon).trim()) {
         errors.icon = "Vui lòng nhập icon.";
+    }
+
+    if (!form.category_id) {
+        errors.category_id = "Vui lòng chọn danh mục.";
     }
 
     const points = Number(form.points);
@@ -75,7 +91,7 @@ async function save() {
     await parent.saveTask({
         ...payload,
         user_id: null,
-        category_id: form.category_id || null,
+        category_id: form.category_id,
     });
     toast.show(isEditing ? "Cập nhật nhiệm vụ thành công." : "Thêm nhiệm vụ thành công.");
     reset();
@@ -139,9 +155,11 @@ onMounted(async () => {
                                 >Danh mục</span
                             ><select
                                 v-model="form.category_id"
-                                class="min-h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-semibold"
+                                class="min-h-11 w-full rounded-xl border px-3 text-sm font-semibold"
+                                :class="errors.category_id ? 'border-red-400' : 'border-slate-200'"
+                                @change="errors.category_id = ''"
                             >
-                                <option value="">Không danh mục</option>
+                                <option value="" disabled>Chọn danh mục</option>
                                 <option
                                     v-for="category in parent.categories"
                                     :key="category.id"
@@ -149,7 +167,7 @@ onMounted(async () => {
                                 >
                                     {{ category.icon }} {{ category.name }}
                                 </option>
-                            </select></label
+                            </select><span v-if="errors.category_id" class="mt-1 block text-xs font-semibold text-red-600">{{ errors.category_id }}</span></label
                         >
                     </div>
                     <label
@@ -175,8 +193,17 @@ onMounted(async () => {
             />
 
             <div v-else class="grid gap-3">
+                <label class="relative block">
+                    <span class="sr-only">Tìm nhiệm vụ</span>
+                    <input
+                        v-model="searchQuery"
+                        type="search"
+                        placeholder="Tìm theo tên, danh mục hoặc mô tả..."
+                        class="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:ring-3 focus:ring-sky-100"
+                    />
+                </label>
                 <article
-                    v-for="task in parent.tasks"
+                    v-for="task in filteredTasks"
                     :key="task.id"
                     class="admin-card p-4"
                 >
@@ -218,6 +245,12 @@ onMounted(async () => {
                         </div>
                     </div>
                 </article>
+                <p
+                    v-if="!filteredTasks.length"
+                    class="rounded-xl border border-dashed border-slate-200 py-8 text-center text-sm font-semibold text-slate-500"
+                >
+                    Không tìm thấy nhiệm vụ phù hợp.
+                </p>
             </div>
         </div>
 

@@ -31,7 +31,7 @@ function selectChild(child) {
             </div>
             <LoadingState v-if="childStore.loadingStates.children && !childStore.children.length" title="Đang tải hồ sơ bé" message="KidTask đang chuẩn bị danh sách để con chọn." variant="child" />
             <ChildSelector v-else :children="childStore.children" @select="selectChild" />
-            <router-link to="/parent/login" class="mx-auto mt-8 inline-flex min-h-12 items-center rounded-full bg-slate-950 px-5 text-sm font-black text-white shadow-lg shadow-slate-300 transition hover:-translate-y-0.5 hover:bg-slate-800">
+            <router-link to="/parent" class="mx-auto mt-8 inline-flex min-h-12 items-center rounded-full bg-slate-950 px-5 text-sm font-black text-white shadow-lg shadow-slate-300 transition hover:-translate-y-0.5 hover:bg-slate-800">
                 🔐 Khu vực phụ huynh
             </router-link>
         </section>

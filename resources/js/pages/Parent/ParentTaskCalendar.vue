@@ -13,6 +13,8 @@ const toast = useToastStore();
 const selectedDates = ref([]);
 const selectedTaskIds = ref([]);
 const selectedChildIds = ref([]);
+const activeChildId = ref(null);
+const taskIdsByChild = ref({});
 const modalDate = ref(null);
 const currentMonth = ref(monthDateFromKey(vietnamTodayKey()));
 const quickRange = ref({
@@ -408,24 +410,59 @@ function taskTemplateKey(task) {
     ].join("|");
 }
 
+function refreshSelectedChildren() {
+    selectedChildIds.value = Object.entries(taskIdsByChild.value)
+        .filter(([, taskIds]) => taskIds.length)
+        .map(([id]) => Number(id));
+}
+
 function toggleTask(taskId) {
+    if (!activeChildId.value) return;
+
     selectedTaskIds.value = selectedTaskIds.value.includes(taskId)
         ? selectedTaskIds.value.filter((id) => id !== taskId)
         : [...selectedTaskIds.value, taskId];
+
+    taskIdsByChild.value = {
+        ...taskIdsByChild.value,
+        [activeChildId.value]: selectedTaskIds.value,
+    };
+    refreshSelectedChildren();
 }
 
 function toggleChild(childId) {
-    selectedChildIds.value = selectedChildIds.value.includes(childId)
-        ? selectedChildIds.value.filter((id) => id !== childId)
-        : [...selectedChildIds.value, childId];
+    if (activeChildId.value) {
+        taskIdsByChild.value = {
+            ...taskIdsByChild.value,
+            [activeChildId.value]: selectedTaskIds.value,
+        };
+    }
+
+    activeChildId.value = childId;
+    selectedTaskIds.value = taskIdsByChild.value[childId] ?? [];
+    refreshSelectedChildren();
 }
 
 function selectAllTasks() {
     selectedTaskIds.value = activeTaskTemplates.value.map((task) => task.id);
+    if (activeChildId.value) {
+        taskIdsByChild.value = {
+            ...taskIdsByChild.value,
+            [activeChildId.value]: selectedTaskIds.value,
+        };
+        refreshSelectedChildren();
+    }
 }
 
 function clearTaskSelection() {
     selectedTaskIds.value = [];
+    if (activeChildId.value) {
+        taskIdsByChild.value = {
+            ...taskIdsByChild.value,
+            [activeChildId.value]: [],
+        };
+        refreshSelectedChildren();
+    }
 }
 
 function openModal(key = null) {
@@ -453,7 +490,7 @@ function openModal(key = null) {
         ]),
     );
 
-    const templateIds = new Set();
+    const nextTaskIdsByChild = {};
 
     assignments.forEach((assignment) => {
         const templateId = templateMap.get(
@@ -461,23 +498,26 @@ function openModal(key = null) {
         );
 
         if (templateId) {
-            templateIds.add(templateId);
+            const childId = assignment.user_id;
+            nextTaskIdsByChild[childId] = [
+                ...(nextTaskIdsByChild[childId] ?? []),
+                templateId,
+            ];
         }
     });
 
-    selectedTaskIds.value = [...templateIds];
-
-    selectedChildIds.value = [
-        ...new Set(
-            assignments.map((assignment) => assignment.user_id),
-        ),
-    ];
+    taskIdsByChild.value = nextTaskIdsByChild;
+    selectedChildIds.value = Object.keys(nextTaskIdsByChild).map(Number);
+    activeChildId.value = selectedChildIds.value[0] ?? parent.children[0]?.id ?? null;
+    selectedTaskIds.value = taskIdsByChild.value[activeChildId.value] ?? [];
 }
 
 function closeModal() {
     modalDate.value = null;
     selectedTaskIds.value = [];
     selectedChildIds.value = [];
+    activeChildId.value = null;
+    taskIdsByChild.value = {};
 }
 
 async function loadCalendar() {
@@ -496,7 +536,7 @@ async function assignSelectedTasks() {
 
     if (
         !modalHasAssignments.value &&
-        (!selectedTaskIds.value.length || !selectedChildIds.value.length)
+        !Object.values(taskIdsByChild.value).some((taskIds) => taskIds.length)
     ) {
         toast.show("Vui lòng chọn nhiệm vụ và bé nhận nhiệm vụ.");
         return;
@@ -511,25 +551,23 @@ async function assignSelectedTasks() {
 
             return (
                 !templateId ||
-                !selectedTaskIds.value.includes(templateId) ||
-                !selectedChildIds.value.includes(assignment.user_id)
+                !(taskIdsByChild.value[assignment.user_id] ?? []).includes(templateId)
             );
         })
         .map((assignment) => assignment.id);
-    const assignPayload =
-        selectedTaskIds.value.length && selectedChildIds.value.length
-            ? {
-                  user_ids: selectedChildIds.value,
-                  task_ids: selectedTaskIds.value,
-                  dates: modalDates.value,
-              }
-            : null;
+    const assignPayloads = Object.entries(taskIdsByChild.value)
+        .filter(([, taskIds]) => taskIds.length)
+        .map(([childId, taskIds]) => ({
+            user_ids: [Number(childId)],
+            task_ids: taskIds,
+            dates: modalDates.value,
+        }));
 
     try {
         await parent.saveTaskAssignmentChanges(
             {
                 deleteIds,
-                assignPayload,
+                assignPayloads,
             },
             calendarParams.value,
         );
@@ -778,7 +816,7 @@ onMounted(async () => {
                     class="min-h-40 border-b border-r border-slate-100 p-2 text-left transition"
                     :class="{
                         'bg-slate-50/70': day.blank,
-                        'cursor-not-allowed bg-slate-50 opacity-40':
+                        'pointer-events-none border-transparent bg-transparent':
                             !day.blank && !day.isInFilter,
                         'cursor-pointer bg-sky-50 ring-2 ring-inset ring-sky-200 hover:bg-sky-100':
                             !day.blank && day.isInFilter && day.isSelected,
@@ -802,7 +840,7 @@ onMounted(async () => {
                     }"
                     @click="!day.blank && day.isInFilter && openModal(day.key)"
                 >
-                    <template v-if="!day.blank">
+                    <template v-if="!day.blank && day.isInFilter">
                         <div class="flex items-center justify-between gap-2">
                             <span
                                 class="flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold"
@@ -826,7 +864,7 @@ onMounted(async () => {
                             />
                         </div>
 
-                        <div v-if="day.isInFilter" class="mt-3 grid gap-1">
+                        <div class="mt-3 grid gap-1">
                             <div
                                 v-if="day.isLocked"
                                 class="rounded-lg bg-slate-200 px-2 py-1 text-xs font-bold text-slate-600"
@@ -870,12 +908,6 @@ onMounted(async () => {
                                 </div>
                             </div>
                         </div>
-                        <div
-                            v-else
-                            class="mt-3 text-center text-[11px] font-semibold text-slate-400"
-                        >
-                            Ngoài bộ lọc
-                        </div>
                     </template>
                 </div>
             </div>
@@ -892,6 +924,7 @@ onMounted(async () => {
             :selected-task-ids="selectedTaskIds"
             :children="parent.children"
             :selected-child-ids="selectedChildIds"
+            :active-child-id="activeChildId"
             @close="closeModal"
             @toggle-task="toggleTask"
             @toggle-child="toggleChild"

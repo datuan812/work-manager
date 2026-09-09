@@ -1,7 +1,7 @@
 <script setup>
-import { Teleport, Transition } from "vue";
+import { computed, Teleport, Transition } from "vue";
 
-defineProps({
+const props = defineProps({
     open: { type: Boolean, default: false },
     points: { type: Number, default: 0 },
     rewards: { type: Array, default: () => [] },
@@ -9,6 +9,10 @@ defineProps({
 });
 
 const emit = defineEmits(["close", "redeem"]);
+
+const redeemableCount = computed(
+    () => props.rewards.filter((reward) => props.points >= reward.required_points).length,
+);
 </script>
 
 <template>
@@ -46,6 +50,15 @@ const emit = defineEmits(["close", "redeem"]);
                             </div>
                         </div>
 
+                        <div class="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm">
+                            <p class="font-extrabold text-amber-900">
+                                {{ redeemableCount ? `Con có ${points} sao và đổi được ${redeemableCount} phần thưởng.` : `Con đang có ${points} sao. Hãy hoàn thành nhiệm vụ để tích thêm sao nhé!` }}
+                            </p>
+                            <p class="mt-1 font-semibold text-amber-800/80">
+                                Phần thưởng có nút “Đổi ngay” là phần con đã đủ sao.
+                            </p>
+                        </div>
+
                         <div v-if="loading" class="mt-4 grid gap-3">
                             <div
                                 v-for="n in 3"
@@ -64,7 +77,7 @@ const emit = defineEmits(["close", "redeem"]);
                                 :class="
                                     points < reward.required_points
                                         ? 'cursor-not-allowed border-slate-100 bg-slate-50 opacity-60'
-                                        : 'border-slate-200 bg-white hover:-translate-y-0.5 hover:border-amber-300 hover:bg-amber-50'
+                                        : 'border-amber-300 bg-amber-50 shadow-sm hover:-translate-y-0.5 hover:border-amber-400 hover:bg-amber-100'
                                 "
                                 @click="emit('redeem', reward)"
                             >
@@ -88,6 +101,13 @@ const emit = defineEmits(["close", "redeem"]);
                                 >
                                     Còn thiếu {{ reward.required_points - points }} ⭐ nữa
                                 </p>
+                                <div
+                                    v-else
+                                    class="mt-2 flex items-center justify-between gap-3 text-xs font-extrabold text-amber-800"
+                                >
+                                    <span>Sau khi đổi còn {{ points - reward.required_points }} ⭐</span>
+                                    <span class="rounded-lg bg-amber-500 px-2.5 py-1 text-white">Đổi ngay</span>
+                                </div>
                             </button>
 
                             <p

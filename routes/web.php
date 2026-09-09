@@ -45,7 +45,7 @@ Route::prefix('api')->group(function () {
         Route::get('reward-history', [RewardHistoryController::class, 'index']);
         Route::apiResource('tasks', TaskManagementController::class)->except(['show']);
         Route::apiResource('rewards', RewardManagementController::class)->except(['show']);
-        Route::get('achievements', [AchievementController::class, 'index']);
+        Route::apiResource('achievements', AchievementController::class)->except(['show']);
     });
 });
 

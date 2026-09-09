@@ -63,7 +63,7 @@ class TaskManagementController extends Controller
     {
         return [
             'user_id' => ['nullable', Rule::exists('users', 'id')],
-            'category_id' => ['nullable', Rule::exists('task_categories', 'id')],
+            'category_id' => [$creating ? 'required' : 'sometimes', Rule::exists('task_categories', 'id')],
             'title' => [$creating ? 'required' : 'sometimes', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'icon' => ['nullable', 'string', 'max:20'],

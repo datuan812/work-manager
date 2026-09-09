@@ -45,4 +45,7 @@ export const parentService = {
     updateReward: (id, payload) => api(`/api/parent/rewards/${id}`, { method: 'PUT', body: payload }),
     deleteReward: (id) => api(`/api/parent/rewards/${id}`, { method: 'DELETE' }),
     achievements: () => api('/api/parent/achievements'),
+    createAchievement: (payload) => api('/api/parent/achievements', { method: 'POST', body: payload }),
+    updateAchievement: (id, payload) => api(`/api/parent/achievements/${id}`, { method: 'PUT', body: payload }),
+    deleteAchievement: (id) => api(`/api/parent/achievements/${id}`, { method: 'DELETE' }),
 }

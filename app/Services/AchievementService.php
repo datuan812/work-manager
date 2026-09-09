@@ -17,7 +17,7 @@ class AchievementService
         $perfectToday = $child->dailyTasks()->whereDate('date', $today)->exists()
             && ! $child->dailyTasks()->whereDate('date', $today)->where('status', '!=', DailyTaskStatus::COMPLETED->value)->exists();
 
-        $rules = [
+        $legacyRules = [
             'first_step' => $completedCount >= 1,
             'seven_day_streak' => $streak >= 7,
             'task_master' => $completedCount >= 100,
@@ -26,8 +26,17 @@ class AchievementService
 
         Achievement::query()
             ->where('is_active', true)
-            ->whereIn('code', array_keys(array_filter($rules)))
             ->get()
+            ->filter(function (Achievement $achievement) use ($completedCount, $streak, $perfectToday, $legacyRules): bool {
+                $criteria = $achievement->criteria ?? [];
+
+                return match ($criteria['type'] ?? null) {
+                    'completed_tasks' => $completedCount >= (int) ($criteria['value'] ?? PHP_INT_MAX),
+                    'streak_days' => $streak >= (int) ($criteria['value'] ?? PHP_INT_MAX),
+                    'perfect_day' => $perfectToday,
+                    default => $legacyRules[$achievement->code] ?? false,
+                };
+            })
             ->each(function (Achievement $achievement) use ($child, &$unlocked): void {
                 $attached = $child->achievements()->syncWithoutDetaching([
                     $achievement->id => ['unlocked_at' => now()],

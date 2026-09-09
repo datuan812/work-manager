@@ -102,13 +102,13 @@ export const useParentStore = defineStore('parent', {
                 }
             })
         },
-        async saveTaskAssignmentChanges({ deleteIds = [], assignPayload = null }, calendarParams = null) {
+        async saveTaskAssignmentChanges({ deleteIds = [], assignPayloads = [] }, calendarParams = null) {
             return this.withLoading('saveTaskAssignmentChanges', async () => {
                 await Promise.all(deleteIds.map((id) => parentService.deleteTaskAssignment(id)))
 
-                if (assignPayload?.task_ids?.length && assignPayload?.user_ids?.length && assignPayload?.dates?.length) {
-                    await parentService.assignTasks(assignPayload)
-                }
+                await Promise.all(assignPayloads
+                    .filter((payload) => payload.task_ids?.length && payload.user_ids?.length && payload.dates?.length)
+                    .map((payload) => parentService.assignTasks(payload)))
 
                 if (calendarParams) {
                     await this.loadTaskCalendar(calendarParams)
@@ -135,6 +135,20 @@ export const useParentStore = defineStore('parent', {
         async loadAchievements() {
             return this.withLoading('achievements', async () => {
                 this.achievements = await parentService.achievements()
+            })
+        },
+        async saveAchievement(payload) {
+            return this.withLoading('saveAchievement', async () => {
+                payload.id
+                    ? await parentService.updateAchievement(payload.id, payload)
+                    : await parentService.createAchievement(payload)
+                await this.loadAchievements()
+            })
+        },
+        async deleteAchievement(id) {
+            return this.withLoading('deleteAchievement', async () => {
+                await parentService.deleteAchievement(id)
+                await this.loadAchievements()
             })
         },
         async loadStatistics() {

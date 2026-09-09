@@ -10,6 +10,7 @@ import ProgressBar from "../../components/common/ProgressBar.vue";
 import EmptyState from "../../components/common/EmptyState.vue";
 import AvatarPhoto from "../../components/common/AvatarPhoto.vue";
 import LoadingState from "../../components/common/LoadingState.vue";
+import ConfirmDialog from "../../components/common/ConfirmDialog.vue";
 import { useChildStore } from "../../stores/child.store";
 import { useToastStore } from "../../stores/toast.store";
 
@@ -20,6 +21,7 @@ const toast = useToastStore();
 const busyId = ref(null);
 const showRewards = ref(false);
 const showRewardHistory = ref(false);
+const rewardToRedeem = ref(null);
 const selectedDay = ref("today");
 const draftCompletedIds = ref(new Set());
 
@@ -36,13 +38,13 @@ const dateOptions = computed(() => {
         {
             key: "yesterday",
             label: "Hôm qua",
-            helper: "Có thể sửa nếu chưa chốt",
+            helper: "Có thể sửa nếu chưa hoàn thành",
             date: addDays(today, -1),
         },
         {
             key: "today",
             label: "Hôm nay",
-            helper: "Chọn xong rồi chốt",
+            helper: "Chọn xong rồi hoàn thành",
             date: today,
         },
         {
@@ -100,14 +102,14 @@ const displayedProgress = computed(() => {
 });
 const submitHint = computed(() => {
     if (selectedDay.value === "tomorrow") {
-        return "Ngày mai chỉ xem trước, chưa thể tích hoặc chốt.";
+        return "Ngày mai chỉ xem trước, chưa thể tích hoặc hoàn thành.";
     }
 
     if (dayStatus.value.is_submitted) {
-        return "Ngày này đã chốt, bé chỉ có thể xem lại.";
+        return "Ngày này đã hoàn thành, bé chỉ có thể xem lại.";
     }
 
-    return "Tích các việc đã làm, sau đó bấm chốt để lưu điểm sao.";
+    return "Tích các việc đã làm, sau đó bấm hoàn thành để lưu điểm sao.";
 });
 
 function addDays(date, amount) {
@@ -190,17 +192,27 @@ async function submitDay() {
         syncDraft();
         const amount = result.points_awarded || 0;
         toast.show(
-            amount > 0 ? `Đã chốt nhiệm vụ! +${amount} ⭐` : "Đã chốt nhiệm vụ",
+            amount > 0 ? `Đã hoàn thành nhiệm vụ! +${amount} ⭐` : "Đã hoàn thành nhiệm vụ",
         );
     } catch (error) {
         toast.show(error.message, "error");
     }
 }
 
-async function redeem(reward) {
+function requestRedeem(reward) {
     if (dashboard.value && dashboard.value.points < reward.required_points) {
         return;
     }
+
+    rewardToRedeem.value = reward;
+}
+
+async function redeem() {
+    const reward = rewardToRedeem.value;
+    rewardToRedeem.value = null;
+
+    if (!reward) return;
+
     try {
         await childStore.redeem(reward.id);
         await childStore.loadDailyTasks(route.params.id, selectedDate.value);
@@ -407,8 +419,8 @@ onMounted(load);
                             >
                                 {{
                                     childStore.loadingStates.submitDailyTasks
-                                        ? "Đang chốt..."
-                                        : "Chốt nhiệm vụ"
+                                        ? "Đang hoàn thành..."
+                                        : "Hoàn thành nhiệm vụ"
                                 }}
                             </button>
                         </div>
@@ -488,7 +500,18 @@ onMounted(load);
             :rewards="childStore.rewards?.rewards ?? []"
             :loading="childStore.loadingStates.rewards && !childStore.rewards"
             @close="showRewards = false"
-            @redeem="redeem"
+            @redeem="requestRedeem"
+        />
+
+        <ConfirmDialog
+            :model-value="!!rewardToRedeem"
+            title="Đổi phần thưởng"
+            :message="rewardToRedeem ? `Con sẽ dùng ${rewardToRedeem.required_points} ⭐ để đổi '${rewardToRedeem.title}'. Con đồng ý chứ?` : ''"
+            confirm-text="Đổi thưởng"
+            cancel-text="Xem lại"
+            variant="default"
+            @confirm="redeem"
+            @cancel="rewardToRedeem = null"
         />
 
         <RewardHistoryModal
