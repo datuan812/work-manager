@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['task_id', 'user_id', 'date', 'status', 'completed_at'])]
+#[Fillable(['task_id', 'user_id', 'date', 'reminder_time', 'status', 'completed_at'])]
 class DailyTask extends Model
 {
     protected function casts(): array

@@ -18,6 +18,7 @@ use App\Services\StreakService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
 class ChildController extends Controller
@@ -30,6 +31,25 @@ class ChildController extends Controller
             ->orderBy('name')
             ->get(['id', 'name', 'avatar', 'date_of_birth'])
             ->map(fn (User $child) => $this->childPayload($child));
+    }
+
+    public function unlock(Request $request, User $user)
+    {
+        abort_unless($user->isChild() && $user->is_active, 404);
+
+        $validated = $request->validate([
+            'pin' => ['required', 'digits_between:4,6'],
+        ]);
+
+        if (! $user->child_pin || ! Hash::check($validated['pin'], $user->child_pin)) {
+            throw ValidationException::withMessages([
+                'pin' => 'Mã PIN không đúng.',
+            ]);
+        }
+
+        $request->session()->put("child_access.{$user->id}", true);
+
+        return ['child' => $this->childPayload($user)];
     }
 
     public function today(User $user, DailyTaskGenerator $generator, PointService $points, StreakService $streaks)
@@ -301,12 +321,17 @@ class ChildController extends Controller
 
         return $user->rewardRedemptions()
             ->with('reward')
-            ->latest('redeemed_at')
+            ->latest('requested_at')
+            ->latest('id')
             ->limit(50)
             ->get()
             ->map(fn ($redemption) => [
                 'id' => $redemption->id,
                 'points_spent' => $redemption->points_spent,
+                'status' => $redemption->status,
+                'requested_at' => $redemption->requested_at?->toIso8601String(),
+                'approved_at' => $redemption->approved_at?->toIso8601String(),
+                'rejected_at' => $redemption->rejected_at?->toIso8601String(),
                 'redeemed_at' => $redemption->redeemed_at?->toIso8601String(),
                 'reward' => $redemption->reward ? [
                     'id' => $redemption->reward->id,
@@ -331,6 +356,7 @@ class ChildController extends Controller
             'name' => $child->name,
             'avatar' => $child->avatar,
             'date_of_birth' => $child->date_of_birth?->toDateString(),
+            'requires_pin' => $child->child_pin !== null,
         ];
     }
 
@@ -339,6 +365,7 @@ class ChildController extends Controller
         return [
             'id' => $dailyTask->id,
             'date' => $dailyTask->date->toDateString(),
+            'reminder_time' => $dailyTask->reminder_time ? substr((string) $dailyTask->reminder_time, 0, 5) : null,
             'status' => $dailyTask->status->value,
             'completed_at' => $dailyTask->completed_at?->toIso8601String(),
             'task' => [

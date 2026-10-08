@@ -2,22 +2,27 @@
 import { Teleport, Transition } from "vue";
 import { AlertTriangle } from "lucide-vue-next";
 
-defineProps({
+const props = defineProps({
     modelValue: { type: Boolean, default: false },
     title: { type: String, default: "Xác nhận" },
     message: { type: String, default: "Bạn có chắc chắn muốn thực hiện hành động này?" },
     confirmText: { type: String, default: "Xóa" },
     cancelText: { type: String, default: "Hủy" },
     variant: { type: String, default: "danger" }, // danger | default
+    loading: { type: Boolean, default: false },
 });
 
 const emit = defineEmits(["update:modelValue", "confirm", "cancel"]);
 
 function close() {
+    if (props.loading) return;
+
     emit("update:modelValue", false);
     emit("cancel");
 }
 function confirm() {
+    if (props.loading) return;
+
     emit("update:modelValue", false);
     emit("confirm");
 }
@@ -54,6 +59,8 @@ function confirm() {
                             <button
                                 type="button"
                                 class="min-h-10 rounded-xl border border-slate-200 px-4 text-sm font-bold text-slate-600 transition hover:bg-slate-50"
+                                :disabled="loading"
+                                :class="loading ? 'cursor-wait opacity-60' : ''"
                                 @click="close"
                             >
                                 {{ cancelText }}
@@ -61,10 +68,11 @@ function confirm() {
                             <button
                                 type="button"
                                 class="min-h-10 rounded-xl px-4 text-sm font-bold text-white transition"
-                                :class="variant === 'danger' ? 'bg-red-600 hover:bg-red-700' : 'bg-sky-600 hover:bg-sky-700'"
+                                :disabled="loading"
+                                :class="[variant === 'danger' ? 'bg-red-600 hover:bg-red-700' : 'bg-sky-600 hover:bg-sky-700', loading ? 'cursor-wait opacity-70' : '']"
                                 @click="confirm"
                             >
-                                {{ confirmText }}
+                                {{ loading ? 'Đang xử lý...' : confirmText }}
                             </button>
                         </div>
                     </div>

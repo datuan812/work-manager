@@ -90,7 +90,6 @@ async function save() {
     const { schedule, user, ...payload } = form;
     await parent.saveTask({
         ...payload,
-        user_id: null,
         category_id: form.category_id,
     });
     toast.show(isEditing ? "Cập nhật nhiệm vụ thành công." : "Thêm nhiệm vụ thành công.");

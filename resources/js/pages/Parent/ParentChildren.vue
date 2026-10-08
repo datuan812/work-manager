@@ -8,16 +8,17 @@ import LoadingState from '../../components/common/LoadingState.vue'
 import ConfirmDialog from "../../components/common/ConfirmDialog.vue";
 import { useParentStore } from '../../stores/parent.store'
 import { useToastStore } from '../../stores/toast.store'
-import { CalendarDays, SquarePen, Trash2 } from 'lucide-vue-next'
+import { CalendarDays, Eye, EyeOff, SquarePen, Trash2 } from 'lucide-vue-next'
 
 const parent = useParentStore()
 const toast = useToastStore()
 const confirmDelete = reactive({ show: false, id: null });
 const fileInput = ref(null)
 const datePicker = ref(null)
-const form = reactive({ id: null, name: '', avatar: '', avatar_file: null, avatar_preview: '', date_of_birth: '', is_active: true })
+const showPin = ref(false)
+const form = reactive({ id: null, name: '', avatar: '', avatar_file: null, avatar_preview: '', date_of_birth: '', access_pin: '', is_active: true })
 const dateOfBirthInput = ref('')
-const errors = reactive({ name: '', date_of_birth: '', avatar_file: '' })
+const errors = reactive({ name: '', date_of_birth: '', access_pin: '', avatar_file: '' })
 const previewAvatar = computed(() => form.avatar_preview || form.avatar)
 
 function normalizeDate(value) {
@@ -57,7 +58,7 @@ function isValidDateParts(day, month, year) {
 }
 
 function clearErrors() {
-    Object.assign(errors, { name: '', date_of_birth: '', avatar_file: '' })
+    Object.assign(errors, { name: '', date_of_birth: '', access_pin: '', avatar_file: '' })
 }
 
 function validateForm() {
@@ -65,6 +66,12 @@ function validateForm() {
 
     if (!form.name.trim()) {
         errors.name = 'Vui lòng nhập tên bé.'
+    }
+
+    if (!form.id && !/^\d{4,6}$/.test(form.access_pin)) {
+        errors.access_pin = 'Mã PIN cần có 4-6 số.'
+    } else if (form.id && form.access_pin && !/^\d{4,6}$/.test(form.access_pin)) {
+        errors.access_pin = 'Mã PIN mới cần có 4-6 số.'
     }
 
     const normalizedDate = normalizeDate(dateOfBirthInput.value)
@@ -89,14 +96,16 @@ function validateForm() {
 }
 
 function edit(child) {
-    Object.assign(form, { id: child.id, name: child.name, avatar: child.avatar || '', avatar_file: null, avatar_preview: '', date_of_birth: normalizeDate(child.date_of_birth) || '', is_active: child.is_active })
+    Object.assign(form, { id: child.id, name: child.name, avatar: child.avatar || '', avatar_file: null, avatar_preview: '', date_of_birth: normalizeDate(child.date_of_birth) || '', access_pin: '', is_active: child.is_active })
     dateOfBirthInput.value = formatDateInput(form.date_of_birth)
+    showPin.value = false
     clearErrors()
     if (fileInput.value) fileInput.value.value = ''
 }
 function reset() {
-    Object.assign(form, { id: null, name: '', avatar: '', avatar_file: null, avatar_preview: '', date_of_birth: '', is_active: true })
+    Object.assign(form, { id: null, name: '', avatar: '', avatar_file: null, avatar_preview: '', date_of_birth: '', access_pin: '', is_active: true })
     dateOfBirthInput.value = ''
+    showPin.value = false
     clearErrors()
     if (fileInput.value) fileInput.value.value = ''
 }
@@ -176,6 +185,36 @@ onMounted(() => parent.loadChildren())
                     <h2 class="text-lg font-bold">{{ form.id ? 'Cập nhật hồ sơ' : 'Thêm bé mới' }}</h2>
                 </div>
                 <BaseInput v-model="form.name" label="Tên" :error="errors.name" @update:modelValue="errors.name = ''" />
+                <div class="mt-4">
+                    <label class="block">
+                        <span class="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">
+                            {{ form.id ? 'Đổi mã PIN' : 'Mã PIN cho bé' }}
+                        </span>
+                        <div class="relative">
+                            <input
+                                v-model="form.access_pin"
+                                :type="showPin ? 'text' : 'password'"
+                                :placeholder="form.id ? 'Bỏ trống nếu giữ nguyên' : '4-6 số'"
+                                inputmode="numeric"
+                                maxlength="6"
+                                :aria-invalid="!!errors.access_pin"
+                                class="min-h-11 w-full rounded-xl border bg-white px-3 pr-12 text-sm font-semibold text-slate-900 outline-none transition placeholder:text-slate-400 focus:ring-3"
+                                :class="errors.access_pin ? 'border-red-300 focus:border-red-500 focus:ring-red-100' : 'border-slate-200 focus:border-sky-500 focus:ring-sky-100'"
+                                @input="errors.access_pin = ''"
+                            />
+                            <button
+                                type="button"
+                                :title="showPin ? 'Ẩn mã PIN' : 'Hiện mã PIN'"
+                                class="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-sky-700"
+                                @click="showPin = !showPin"
+                            >
+                                <EyeOff v-if="showPin" class="h-4 w-4" />
+                                <Eye v-else class="h-4 w-4" />
+                            </button>
+                        </div>
+                        <span v-if="errors.access_pin" class="mt-1 block text-xs font-semibold text-red-600">{{ errors.access_pin }}</span>
+                    </label>
+                </div>
                 <div class="mt-4 flex items-center gap-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-4">
                     <AvatarPhoto :src="previewAvatar" :name="form.name" size="lg" />
                     <label class="min-w-0 flex-1">

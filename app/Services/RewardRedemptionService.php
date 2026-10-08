@@ -15,32 +15,88 @@ class RewardRedemptionService
 
     public function redeem(User $child, Reward $reward): RewardRedemption
     {
-        if (! $reward->is_active) {
-            throw ValidationException::withMessages(['reward' => 'Reward is not available.']);
-        }
+        return $this->request($child, $reward);
+    }
 
+    public function request(User $child, Reward $reward): RewardRedemption
+    {
         return DB::transaction(function () use ($child, $reward): RewardRedemption {
-            if ($this->points->balance($child) < $reward->required_points) {
+            $lockedChild = User::query()->lockForUpdate()->findOrFail($child->id);
+            $lockedReward = Reward::query()->lockForUpdate()->findOrFail($reward->id);
+
+            if (! $lockedReward->is_active) {
+                throw ValidationException::withMessages(['reward' => 'Reward is not available.']);
+            }
+
+            if ($this->points->balance($lockedChild) < $lockedReward->required_points) {
                 throw ValidationException::withMessages(['points' => 'Không đủ điểm để đổi phần thưởng này.']);
             }
 
-            $redemption = RewardRedemption::create([
-                'user_id' => $child->id,
-                'reward_id' => $reward->id,
-                'points_spent' => $reward->required_points,
+            return RewardRedemption::create([
+                'user_id' => $lockedChild->id,
+                'reward_id' => $lockedReward->id,
+                'points_spent' => $lockedReward->required_points,
+                'status' => 'pending',
+                'requested_at' => now(),
+            ])->load('reward');
+        });
+    }
+
+    public function approve(RewardRedemption $redemption): RewardRedemption
+    {
+        return DB::transaction(function () use ($redemption): RewardRedemption {
+            $lockedRedemption = RewardRedemption::query()
+                ->with(['reward', 'user'])
+                ->lockForUpdate()
+                ->findOrFail($redemption->id);
+
+            if ($lockedRedemption->status !== 'pending') {
+                throw ValidationException::withMessages(['redemption' => 'Yêu cầu này đã được xử lý.']);
+            }
+
+            $lockedChild = User::query()->lockForUpdate()->findOrFail($lockedRedemption->user_id);
+
+            if ($this->points->balance($lockedChild) < $lockedRedemption->points_spent) {
+                throw ValidationException::withMessages(['points' => 'Không đủ điểm để đổi phần thưởng này.']);
+            }
+
+            $lockedRedemption->update([
+                'status' => 'approved',
                 'redeemed_at' => now(),
+                'approved_at' => now(),
             ]);
 
             $this->points->record(
-                $child,
-                -$reward->required_points,
+                $lockedChild,
+                -$lockedRedemption->points_spent,
                 PointTransactionType::REWARD_REDEEMED,
                 RewardRedemption::class,
-                $redemption->id,
-                "Redeemed {$reward->title}",
+                $lockedRedemption->id,
+                "Redeemed {$lockedRedemption->reward?->title}",
             );
 
-            return $redemption->load('reward');
+            return $lockedRedemption->refresh()->load(['reward', 'user']);
+        });
+    }
+
+    public function reject(RewardRedemption $redemption): RewardRedemption
+    {
+        return DB::transaction(function () use ($redemption): RewardRedemption {
+            $lockedRedemption = RewardRedemption::query()
+                ->with(['reward', 'user'])
+                ->lockForUpdate()
+                ->findOrFail($redemption->id);
+
+            if ($lockedRedemption->status !== 'pending') {
+                throw ValidationException::withMessages(['redemption' => 'Yêu cầu này đã được xử lý.']);
+            }
+
+            $lockedRedemption->update([
+                'status' => 'rejected',
+                'rejected_at' => now(),
+            ]);
+
+            return $lockedRedemption->refresh()->load(['reward', 'user']);
         });
     }
 }

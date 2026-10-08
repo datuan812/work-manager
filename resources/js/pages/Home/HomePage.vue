@@ -1,19 +1,51 @@
 <script setup>
-import { onMounted } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import ChildLayout from '../../layouts/ChildLayout.vue'
 import ChildSelector from '../../components/child/ChildSelector.vue'
 import LoadingState from '../../components/common/LoadingState.vue'
+import BaseButton from '../../components/common/BaseButton.vue'
 import { useChildStore } from '../../stores/child.store'
+import { useToastStore } from '../../stores/toast.store'
 
 const router = useRouter()
 const childStore = useChildStore()
+const toast = useToastStore()
+const selectedChild = ref(null)
+const unlockForm = reactive({ pin: '' })
+const unlockError = ref('')
 
 onMounted(() => childStore.loadChildren())
 
 function selectChild(child) {
-    childStore.selectChild(child.id)
-    router.push(`/child/${child.id}`)
+    selectedChild.value = child
+    unlockForm.pin = ''
+    unlockError.value = ''
+}
+
+function closeUnlock() {
+    selectedChild.value = null
+    unlockForm.pin = ''
+    unlockError.value = ''
+}
+
+async function unlockChild() {
+    if (!selectedChild.value) return
+
+    unlockError.value = ''
+
+    if (!/^\d{4,6}$/.test(unlockForm.pin)) {
+        unlockError.value = 'Nhập mã PIN 4-6 số.'
+        return
+    }
+
+    try {
+        await childStore.unlockChild(selectedChild.value.id, unlockForm.pin)
+        router.push(`/child/${selectedChild.value.id}`)
+    } catch (error) {
+        unlockError.value = error.message
+        toast.show(error.message, 'error')
+    }
 }
 </script>
 
@@ -35,5 +67,30 @@ function selectChild(child) {
                 🔐 Khu vực phụ huynh
             </router-link>
         </section>
+
+        <div v-if="selectedChild" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4 backdrop-blur-sm">
+            <form class="w-full max-w-sm rounded-[1.5rem] bg-white p-6 shadow-2xl" @submit.prevent="unlockChild">
+                <p class="text-xs font-black uppercase text-sky-700">Mở hồ sơ bé</p>
+                <h2 class="mt-2 text-2xl font-black text-slate-950">{{ selectedChild.name }}</h2>
+                <label class="mt-5 block">
+                    <span class="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Mã PIN</span>
+                    <input
+                        v-model="unlockForm.pin"
+                        inputmode="numeric"
+                        maxlength="6"
+                        autocomplete="one-time-code"
+                        class="min-h-12 w-full rounded-xl border border-slate-200 px-4 text-center text-xl font-black tracking-[0.35em] text-slate-900 outline-none focus:border-sky-500 focus:ring-4 focus:ring-sky-100"
+                        type="password"
+                    />
+                    <span v-if="unlockError" class="mt-2 block text-sm font-semibold text-red-600">{{ unlockError }}</span>
+                </label>
+                <div class="mt-6 flex gap-2">
+                    <BaseButton type="submit" :disabled="childStore.loadingStates.unlockChild">
+                        {{ childStore.loadingStates.unlockChild ? 'Đang mở...' : 'Vào làm nhiệm vụ' }}
+                    </BaseButton>
+                    <BaseButton type="button" variant="secondary" @click="closeUnlock">Hủy</BaseButton>
+                </div>
+            </form>
+        </div>
     </ChildLayout>
 </template>

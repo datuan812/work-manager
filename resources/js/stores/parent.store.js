@@ -86,6 +86,23 @@ export const useParentStore = defineStore('parent', {
                 this.rewardHistory = await parentService.rewardHistory(params)
             })
         },
+        async approveRewardRedemption(id, params = null) {
+            return this.withLoading('rewardApproval', async () => {
+                await parentService.approveRewardRedemption(id)
+                if (params) {
+                    await this.loadRewardHistory(params)
+                }
+                await this.loadDashboard()
+            })
+        },
+        async rejectRewardRedemption(id, params = null) {
+            return this.withLoading('rewardApproval', async () => {
+                await parentService.rejectRewardRedemption(id)
+                if (params) {
+                    await this.loadRewardHistory(params)
+                }
+            })
+        },
         async assignTasks(payload, calendarParams = null) {
             return this.withLoading('assignTasks', async () => {
                 await parentService.assignTasks(payload)

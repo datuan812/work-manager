@@ -16,6 +16,7 @@ const selectedChildIds = ref([]);
 const activeChildId = ref(null);
 const taskIdsByChild = ref({});
 const modalDate = ref(null);
+const reminderTime = ref("");
 const currentMonth = ref(monthDateFromKey(vietnamTodayKey()));
 const quickRange = ref({
     start: monthStartKeyFromDate(currentMonth.value),
@@ -402,6 +403,14 @@ function toggleQuickSelect() {
 }
 
 function taskTemplateKey(task) {
+    if (task?.template_task_id) {
+        return `template:${task.template_task_id}`;
+    }
+
+    if (task?.user_id === null || task?.user_id === undefined) {
+        return `template:${task.id}`;
+    }
+
     return [
         task?.title,
         task?.category_id || "",
@@ -491,6 +500,9 @@ function openModal(key = null) {
     );
 
     const nextTaskIdsByChild = {};
+    const assignmentReminderTimes = assignments
+        .map((assignment) => assignment.reminder_time?.slice?.(0, 5) ?? "")
+        .filter(Boolean);
 
     assignments.forEach((assignment) => {
         const templateId = templateMap.get(
@@ -510,6 +522,7 @@ function openModal(key = null) {
     selectedChildIds.value = Object.keys(nextTaskIdsByChild).map(Number);
     activeChildId.value = selectedChildIds.value[0] ?? parent.children[0]?.id ?? null;
     selectedTaskIds.value = taskIdsByChild.value[activeChildId.value] ?? [];
+    reminderTime.value = [...new Set(assignmentReminderTimes)].length === 1 ? assignmentReminderTimes[0] : "";
 }
 
 function closeModal() {
@@ -518,6 +531,7 @@ function closeModal() {
     selectedChildIds.value = [];
     activeChildId.value = null;
     taskIdsByChild.value = {};
+    reminderTime.value = "";
 }
 
 async function loadCalendar() {
@@ -561,6 +575,7 @@ async function assignSelectedTasks() {
             user_ids: [Number(childId)],
             task_ids: taskIds,
             dates: modalDates.value,
+            reminder_time: reminderTime.value || null,
         }));
 
     try {
@@ -898,6 +913,12 @@ onMounted(async () => {
                                         class="min-w-0 flex-1 truncate text-xs font-bold text-slate-700"
                                         >{{ assignment.task?.title }}</span
                                     >
+                                    <span
+                                        v-if="assignment.reminder_time"
+                                        class="shrink-0 rounded bg-sky-50 px-1.5 py-0.5 text-[10px] font-bold text-sky-700"
+                                    >
+                                        {{ assignment.reminder_time.slice(0, 5) }}
+                                    </span>
                                     <button
                                         type="button"
                                         class="shrink-0 text-xs font-bold text-red-600 opacity-0 transition group-hover:opacity-100"
@@ -925,11 +946,13 @@ onMounted(async () => {
             :children="parent.children"
             :selected-child-ids="selectedChildIds"
             :active-child-id="activeChildId"
+            :reminder-time="reminderTime"
             @close="closeModal"
             @toggle-task="toggleTask"
             @toggle-child="toggleChild"
             @select-all-tasks="selectAllTasks"
             @clear-tasks="clearTaskSelection"
+            @update:reminder-time="reminderTime = $event"
             @save="assignSelectedTasks"
         />
 

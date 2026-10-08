@@ -7,7 +7,7 @@ function childFormData(payload, method = null) {
         formData.append('_method', method)
     }
 
-    ;['name', 'date_of_birth'].forEach((key) => {
+    ;['name', 'date_of_birth', 'access_pin'].forEach((key) => {
         if (payload[key] !== undefined && payload[key] !== null) {
             formData.append(key, payload[key])
         }
@@ -38,6 +38,8 @@ export const parentService = {
     taskCalendar: (params) => api(`/api/parent/task-calendar?${new URLSearchParams(params)}`),
     taskHistory: (params) => api(`/api/parent/task-history?${new URLSearchParams(params)}`),
     rewardHistory: (params) => api(`/api/parent/reward-history?${new URLSearchParams(params)}`),
+    approveRewardRedemption: (id) => api(`/api/parent/reward-history/${id}/approve`, { method: 'PATCH' }),
+    rejectRewardRedemption: (id) => api(`/api/parent/reward-history/${id}/reject`, { method: 'PATCH' }),
     assignTasks: (payload) => api('/api/parent/task-calendar', { method: 'POST', body: payload }),
     deleteTaskAssignment: (id) => api(`/api/parent/task-calendar/${id}`, { method: 'DELETE' }),
     rewards: () => api('/api/parent/rewards'),

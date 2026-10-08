@@ -26,6 +26,7 @@ class DailyTaskGenerator
                     ['date' => $date->toDateString()],
                     [
                         'user_id' => $task->user_id,
+                        'reminder_time' => $task->schedule->time_of_day,
                         'status' => DailyTaskStatus::PENDING,
                     ],
                 );

@@ -1,17 +1,22 @@
 <script setup>
 import { computed, onMounted, reactive, ref, watch } from 'vue'
-import { CalendarDays, Gift, RotateCcw, Sparkles, Star, Users } from 'lucide-vue-next'
+import { CalendarDays, Check, Gift, RotateCcw, Sparkles, Star, Users, X } from 'lucide-vue-next'
 import ParentLayout from '../../layouts/ParentLayout.vue'
 import BaseButton from '../../components/common/BaseButton.vue'
+import ConfirmDialog from '../../components/common/ConfirmDialog.vue'
 import LoadingState from '../../components/common/LoadingState.vue'
 import PaginationControls from '../../components/common/PaginationControls.vue'
 import { useParentStore } from '../../stores/parent.store'
+import { useToastStore } from '../../stores/toast.store'
 
 const parent = useParentStore()
+const toast = useToastStore()
+const confirmAction = reactive({ show: false, item: null, action: '' })
 const filters = reactive({
     start_date: dateKey(daysAgo(30)),
     end_date: dateKey(new Date()),
     user_id: '',
+    status: '',
     per_page: 25,
     page: 1,
 })
@@ -20,9 +25,9 @@ const endDateInput = ref(formatDateInput(filters.end_date))
 const startDatePicker = ref(null)
 const endDatePicker = ref(null)
 const summaryCards = computed(() => [
-    { label: 'Lượt đổi', value: parent.rewardHistory.summary?.total ?? 0, icon: Gift, tone: 'bg-sky-100 text-sky-700' },
+    { label: 'Chờ duyệt', value: parent.rewardHistory.summary?.pending ?? 0, icon: Gift, tone: 'bg-sky-100 text-sky-700' },
     { label: 'Sao đã dùng', value: parent.rewardHistory.summary?.points_spent ?? 0, icon: Star, tone: 'bg-amber-100 text-amber-800' },
-    { label: 'Bé đã đổi', value: parent.rewardHistory.summary?.children ?? 0, icon: Users, tone: 'bg-emerald-100 text-emerald-700' },
+    { label: 'Đã duyệt', value: parent.rewardHistory.summary?.approved ?? 0, icon: Users, tone: 'bg-emerald-100 text-emerald-700' },
 ])
 
 function daysAgo(amount) {
@@ -134,6 +139,7 @@ async function loadHistory(page = filters.page) {
     await parent.loadRewardHistory({
         ...filters,
         user_id: filters.user_id || '',
+        status: filters.status || '',
     })
 }
 
@@ -142,6 +148,7 @@ function resetFilters() {
         start_date: dateKey(daysAgo(30)),
         end_date: dateKey(new Date()),
         user_id: '',
+        status: '',
         per_page: 25,
         page: 1,
     })
@@ -149,8 +156,52 @@ function resetFilters() {
     endDateInput.value = formatDateInput(filters.end_date)
 }
 
+function statusLabel(status) {
+    return {
+        pending: 'Chờ duyệt',
+        approved: 'Đã duyệt',
+        rejected: 'Đã từ chối',
+    }[status] || '—'
+}
+
+function statusClass(status) {
+    return {
+        pending: 'bg-sky-100 text-sky-700',
+        approved: 'bg-emerald-100 text-emerald-700',
+        rejected: 'bg-slate-100 text-slate-600',
+    }[status] || 'bg-slate-100 text-slate-600'
+}
+
+function requestAction(item, action) {
+    confirmAction.item = item
+    confirmAction.action = action
+    confirmAction.show = true
+}
+
+async function runAction() {
+    const item = confirmAction.item
+    const action = confirmAction.action
+    confirmAction.item = null
+    confirmAction.action = ''
+
+    if (!item || !action) return
+
+    try {
+        const params = { ...filters, user_id: filters.user_id || '', status: filters.status || '' }
+        if (action === 'approve') {
+            await parent.approveRewardRedemption(item.id, params)
+            toast.show('Đã duyệt yêu cầu đổi thưởng.')
+        } else {
+            await parent.rejectRewardRedemption(item.id, params)
+            toast.show('Đã từ chối yêu cầu đổi thưởng.')
+        }
+    } catch (error) {
+        toast.show(error.message, 'error')
+    }
+}
+
 watch(
-    () => [filters.start_date, filters.end_date, filters.user_id, filters.per_page],
+    () => [filters.start_date, filters.end_date, filters.user_id, filters.status, filters.per_page],
     () => loadHistory(1),
 )
 
@@ -186,7 +237,7 @@ onMounted(async () => {
         </div>
 
         <section class="admin-card mt-5 p-4">
-            <div class="grid gap-3 lg:grid-cols-[1fr_1fr_1fr_auto] lg:items-end">
+            <div class="grid gap-3 lg:grid-cols-[1fr_1fr_1fr_1fr_auto] lg:items-end">
                 <label class="block">
                     <span class="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Từ ngày</span>
                     <div class="relative">
@@ -226,6 +277,15 @@ onMounted(async () => {
                         <option v-for="child in parent.children" :key="child.id" :value="child.id">{{ child.name }}</option>
                     </select>
                 </label>
+                <label class="block">
+                    <span class="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Trạng thái</span>
+                    <select v-model="filters.status" class="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900">
+                        <option value="">Tất cả</option>
+                        <option value="pending">Chờ duyệt</option>
+                        <option value="approved">Đã duyệt</option>
+                        <option value="rejected">Đã từ chối</option>
+                    </select>
+                </label>
                 <BaseButton variant="secondary" class="w-full" @click="resetFilters">
                     <RotateCcw class="h-4 w-4" />
                     Làm mới lọc
@@ -249,13 +309,15 @@ onMounted(async () => {
                             <th>Thời gian</th>
                             <th>Bé</th>
                             <th>Phần thưởng</th>
+                            <th>Trạng thái</th>
                             <th>Điểm đã dùng</th>
+                            <th></th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr v-for="item in parent.rewardHistory.items" :key="item.id">
                             <td class="whitespace-nowrap text-sm font-semibold text-slate-500">
-                                {{ formatDateTime(item.redeemed_at) }}
+                                {{ formatDateTime(item.requested_at) }}
                             </td>
                             <td class="font-bold text-slate-900">{{ item.user?.name || '—' }}</td>
                             <td>
@@ -269,10 +331,37 @@ onMounted(async () => {
                                     </div>
                                 </div>
                             </td>
+                            <td>
+                                <span class="rounded-full px-3 py-1 text-xs font-bold" :class="statusClass(item.status)">
+                                    {{ statusLabel(item.status) }}
+                                </span>
+                            </td>
                             <td class="font-bold text-amber-700">-{{ item.points_spent }} ⭐</td>
+                            <td class="text-right">
+                                <div v-if="item.status === 'pending'" class="inline-flex gap-2">
+                                    <button
+                                        type="button"
+                                        title="Duyệt"
+                                        class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700 hover:bg-emerald-200 disabled:cursor-wait disabled:opacity-60"
+                                        :disabled="parent.loadingStates.rewardApproval"
+                                        @click="requestAction(item, 'approve')"
+                                    >
+                                        <Check class="h-4 w-4" />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        title="Từ chối"
+                                        class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-red-100 text-red-700 hover:bg-red-200 disabled:cursor-wait disabled:opacity-60"
+                                        :disabled="parent.loadingStates.rewardApproval"
+                                        @click="requestAction(item, 'reject')"
+                                    >
+                                        <X class="h-4 w-4" />
+                                    </button>
+                                </div>
+                            </td>
                         </tr>
                         <tr v-if="!parent.rewardHistory.items.length">
-                            <td colspan="4" class="py-8 text-center">
+                            <td colspan="6" class="py-8 text-center">
                                 <Sparkles class="mx-auto h-8 w-8 text-sky-500" />
                                 <p class="mt-2 text-sm font-semibold text-slate-500">
                                     Chưa có lịch sử đổi thưởng trong khoảng đã chọn.
@@ -291,5 +380,17 @@ onMounted(async () => {
                 @update:per-page="(value) => { filters.per_page = value }"
             />
         </section>
+
+        <ConfirmDialog
+            v-model="confirmAction.show"
+            :title="confirmAction.action === 'approve' ? 'Duyệt đổi thưởng' : 'Từ chối đổi thưởng'"
+            :message="confirmAction.item ? `${confirmAction.item.user?.name || 'Bé'} muốn đổi '${confirmAction.item.reward?.title || 'phần thưởng'}' với ${confirmAction.item.points_spent} sao.` : ''"
+            :confirm-text="confirmAction.action === 'approve' ? 'Duyệt' : 'Từ chối'"
+            cancel-text="Xem lại"
+            :variant="confirmAction.action === 'approve' ? 'default' : 'danger'"
+            :loading="parent.loadingStates.rewardApproval"
+            @confirm="runAction"
+            @cancel="confirmAction.item = null"
+        />
     </ParentLayout>
 </template>

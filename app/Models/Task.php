@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
-#[Fillable(['user_id', 'category_id', 'title', 'description', 'icon', 'points', 'is_active'])]
+#[Fillable(['user_id', 'template_task_id', 'category_id', 'title', 'description', 'icon', 'points', 'is_active'])]
 class Task extends Model
 {
     protected function casts(): array
@@ -19,6 +19,11 @@ class Task extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function template(): BelongsTo
+    {
+        return $this->belongsTo(Task::class, 'template_task_id');
     }
 
     public function category(): BelongsTo
@@ -34,5 +39,10 @@ class Task extends Model
     public function dailyTasks(): HasMany
     {
         return $this->hasMany(DailyTask::class);
+    }
+
+    public function childTasks(): HasMany
+    {
+        return $this->hasMany(Task::class, 'template_task_id');
     }
 }

@@ -14,6 +14,7 @@ const props = defineProps({
     children: { type: Array, default: () => [] },
     selectedChildIds: { type: Array, default: () => [] },
     activeChildId: { type: [Number, String], default: null },
+    reminderTime: { type: String, default: "" },
 });
 
 const emit = defineEmits([
@@ -22,6 +23,7 @@ const emit = defineEmits([
     "toggle-child",
     "select-all-tasks",
     "clear-tasks",
+    "update:reminder-time",
     "save",
 ]);
 
@@ -155,6 +157,16 @@ function toggleSelectAllTasks() {
                             </button>
                         </div>
                     </div>
+                    <label class="mt-4 block max-w-xs">
+                        <span class="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Giờ nhắc</span>
+                        <input
+                            :value="reminderTime"
+                            type="time"
+                            class="min-h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-sky-500 focus:ring-3 focus:ring-sky-100 disabled:bg-slate-50"
+                            :disabled="hasLockedDates"
+                            @input="emit('update:reminder-time', $event.target.value)"
+                        />
+                    </label>
                     <div class="mt-3 grid grid-cols-3 gap-2">
                         <label
                             v-for="task in tasks"

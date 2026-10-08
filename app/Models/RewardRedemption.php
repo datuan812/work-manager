@@ -6,12 +6,18 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['reward_id', 'user_id', 'points_spent', 'redeemed_at'])]
+#[Fillable(['reward_id', 'user_id', 'points_spent', 'status', 'requested_at', 'approved_at', 'rejected_at', 'redeemed_at'])]
 class RewardRedemption extends Model
 {
     protected function casts(): array
     {
-        return ['redeemed_at' => 'datetime', 'points_spent' => 'integer'];
+        return [
+            'approved_at' => 'datetime',
+            'redeemed_at' => 'datetime',
+            'rejected_at' => 'datetime',
+            'requested_at' => 'datetime',
+            'points_spent' => 'integer',
+        ];
     }
 
     public function reward(): BelongsTo

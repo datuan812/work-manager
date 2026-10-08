@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted } from 'vue'
-import { Award, CheckCircle2, Gift, ListChecks, Star, Target, TrendingUp, Users } from 'lucide-vue-next'
+import { AlertTriangle, Award, CheckCircle2, Clock3, Gift, ListChecks, Star, Target, TrendingUp, Users } from 'lucide-vue-next'
 import ParentLayout from '../../layouts/ParentLayout.vue'
 import LoadingState from '../../components/common/LoadingState.vue'
 import { useParentStore } from '../../stores/parent.store'
@@ -11,6 +11,10 @@ const dailyTrend = computed(() => stats.value.daily_trend ?? [])
 const childPerformance = computed(() => stats.value.child_performance ?? [])
 const categoryStats = computed(() => stats.value.category_stats ?? [])
 const topRewards = computed(() => stats.value.top_rewards ?? [])
+const reports = computed(() => stats.value.reports ?? {})
+const attentionChildren = computed(() => reports.value.attention_children ?? [])
+const taskAttention = computed(() => reports.value.task_attention ?? [])
+const pendingRewardRequests = computed(() => reports.value.pending_reward_requests ?? [])
 const todayStatus = computed(() => stats.value.today_status ?? { completed: 0, pending: 0, incomplete: 0 })
 const todayTotal = computed(() => todayStatus.value.completed + todayStatus.value.pending + todayStatus.value.incomplete)
 const todayCompletion = computed(() => todayTotal.value ? Math.round((todayStatus.value.completed / todayTotal.value) * 100) : 0)
@@ -46,6 +50,17 @@ function barWidth(value, max) {
     }
 
     return `${Math.max(4, Math.round((numericValue / max) * 100))}%`
+}
+
+function formatDateTime(value) {
+    if (!value) return '—'
+
+    return new Intl.DateTimeFormat('vi-VN', {
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        month: '2-digit',
+    }).format(new Date(value))
 }
 
 onMounted(() => parent.loadStatistics())
@@ -89,6 +104,95 @@ onMounted(() => parent.loadStatistics())
                         </span>
                     </div>
                 </article>
+            </div>
+
+            <div class="mt-5 grid gap-5 xl:grid-cols-3">
+                <section class="admin-card p-5">
+                    <div class="flex items-center justify-between gap-3">
+                        <div>
+                            <p class="admin-section-title">Cần chú ý</p>
+                            <h2 class="mt-1 text-xl font-bold text-slate-950">Bé có tiến độ thấp</h2>
+                        </div>
+                        <AlertTriangle class="h-5 w-5 text-amber-600" />
+                    </div>
+                    <div class="mt-5 grid gap-3">
+                        <article v-for="child in attentionChildren" :key="child.id" class="rounded-xl border border-amber-100 bg-amber-50/60 p-4">
+                            <div class="flex items-center justify-between gap-3">
+                                <div class="min-w-0">
+                                    <p class="truncate font-bold text-slate-950">{{ child.name }}</p>
+                                    <p class="mt-1 text-xs font-semibold text-slate-600">
+                                        {{ child.completed }}/{{ child.total }} việc trong 7 ngày
+                                    </p>
+                                </div>
+                                <span class="rounded-full bg-white px-3 py-1 text-xs font-bold text-amber-700 ring-1 ring-amber-100">
+                                    {{ child.completion_percent }}%
+                                </span>
+                            </div>
+                            <div class="mt-3 h-2 overflow-hidden rounded-full bg-white">
+                                <div class="h-full rounded-full bg-amber-500" :style="{ width: `${child.completion_percent}%` }"></div>
+                            </div>
+                        </article>
+                        <p v-if="!attentionChildren.length" class="rounded-xl bg-emerald-50 p-4 text-sm font-semibold text-emerald-700">
+                            Không có bé nào cần chú ý trong 7 ngày gần đây.
+                        </p>
+                    </div>
+                </section>
+
+                <section class="admin-card p-5">
+                    <div class="flex items-center justify-between gap-3">
+                        <div>
+                            <p class="admin-section-title">Nhiệm vụ</p>
+                            <h2 class="mt-1 text-xl font-bold text-slate-950">Hay bị bỏ qua</h2>
+                        </div>
+                        <ListChecks class="h-5 w-5 text-sky-600" />
+                    </div>
+                    <div class="mt-5 grid gap-3">
+                        <article v-for="task in taskAttention" :key="task.task_key" class="rounded-xl border border-slate-100 p-4">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="min-w-0">
+                                    <p class="truncate font-bold text-slate-950">{{ task.icon || '⭐' }} {{ task.title }}</p>
+                                    <p class="mt-1 text-xs font-semibold text-slate-500">{{ task.category_name }}</p>
+                                </div>
+                                <span class="rounded-full bg-sky-50 px-3 py-1 text-xs font-bold text-sky-700">
+                                    {{ task.needs_attention }}/{{ task.total }}
+                                </span>
+                            </div>
+                            <p class="mt-2 text-xs font-semibold text-slate-500">{{ task.attention_percent }}% lượt chưa hoàn thành</p>
+                        </article>
+                        <p v-if="!taskAttention.length" class="rounded-xl bg-emerald-50 p-4 text-sm font-semibold text-emerald-700">
+                            Chưa có nhiệm vụ nào bị bỏ qua trong 14 ngày.
+                        </p>
+                    </div>
+                </section>
+
+                <section class="admin-card p-5">
+                    <div class="flex items-center justify-between gap-3">
+                        <div>
+                            <p class="admin-section-title">Phần thưởng</p>
+                            <h2 class="mt-1 text-xl font-bold text-slate-950">Yêu cầu chờ duyệt</h2>
+                        </div>
+                        <Gift class="h-5 w-5 text-rose-600" />
+                    </div>
+                    <div class="mt-5 grid gap-3">
+                        <article v-for="request in pendingRewardRequests" :key="request.id" class="rounded-xl border border-rose-100 bg-rose-50/50 p-4">
+                            <div class="flex items-center justify-between gap-3">
+                                <div class="min-w-0">
+                                    <p class="truncate font-bold text-slate-950">{{ request.reward?.icon || '🎁' }} {{ request.reward?.title || 'Phần thưởng' }}</p>
+                                    <p class="mt-1 text-xs font-semibold text-slate-600">
+                                        {{ request.user?.name || 'Bé' }} · {{ request.points_spent }} sao
+                                    </p>
+                                </div>
+                                <span class="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-xs font-bold text-rose-700 ring-1 ring-rose-100">
+                                    <Clock3 class="h-3.5 w-3.5" />
+                                    {{ formatDateTime(request.requested_at) }}
+                                </span>
+                            </div>
+                        </article>
+                        <p v-if="!pendingRewardRequests.length" class="rounded-xl bg-emerald-50 p-4 text-sm font-semibold text-emerald-700">
+                            Không có yêu cầu đổi thưởng đang chờ.
+                        </p>
+                    </div>
+                </section>
             </div>
 
             <div class="mt-5 grid gap-5 xl:grid-cols-[1.7fr_1fr]">

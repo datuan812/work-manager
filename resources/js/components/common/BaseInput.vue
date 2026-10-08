@@ -1,4 +1,6 @@
 <script setup>
+defineOptions({ inheritAttrs: false })
+
 defineProps({
     modelValue: [String, Number, Boolean],
     label: String,
@@ -17,6 +19,7 @@ defineEmits(['update:modelValue'])
             :value="modelValue"
             :placeholder="placeholder"
             :aria-invalid="!!error"
+            v-bind="$attrs"
             class="min-h-11 w-full rounded-xl border bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition placeholder:text-slate-400 focus:ring-3"
             :class="error ? 'border-red-300 focus:border-red-500 focus:ring-red-100' : 'border-slate-200 focus:border-sky-500 focus:ring-sky-100'"
             @input="$emit('update:modelValue', type === 'number' ? Number($event.target.value) : $event.target.value)"

@@ -6,6 +6,7 @@ const props = defineProps({
     points: { type: Number, default: 0 },
     rewards: { type: Array, default: () => [] },
     loading: { type: Boolean, default: false },
+    redeeming: { type: Boolean, default: false },
 });
 
 const emit = defineEmits(["close", "redeem"]);
@@ -26,7 +27,7 @@ const redeemableCount = computed(
                 <Transition name="sheet-slide" appear>
                     <div
                         v-if="open"
-                        class="max-h-[85vh] w-full overflow-y-auto rounded-t-[2rem] bg-white p-5 shadow-2xl sm:max-w-lg sm:rounded-[2rem] sm:p-6"
+                        class="max-h-[85vh] w-full rounded-t-[2rem] bg-white p-5 shadow-2xl sm:max-w-lg sm:rounded-[2rem] sm:p-6"
                     >
                         <div class="mx-auto mb-4 h-1.5 w-12 rounded-full bg-slate-200 sm:hidden" />
 
@@ -55,7 +56,7 @@ const redeemableCount = computed(
                                 {{ redeemableCount ? `Con có ${points} sao và đổi được ${redeemableCount} phần thưởng.` : `Con đang có ${points} sao. Hãy hoàn thành nhiệm vụ để tích thêm sao nhé!` }}
                             </p>
                             <p class="mt-1 font-semibold text-amber-800/80">
-                                Phần thưởng có nút “Đổi ngay” là phần con đã đủ sao.
+                                Phần thưởng đủ sao sẽ gửi yêu cầu để phụ huynh duyệt.
                             </p>
                         </div>
 
@@ -67,15 +68,15 @@ const redeemableCount = computed(
                             />
                         </div>
 
-                        <div v-else class="mt-4 grid gap-3">
+                        <div v-else class="mt-4 grid gap-3 max-h-[400px] overflow-y-auto">
                             <button
                                 v-for="reward in rewards"
                                 :key="reward.id"
                                 type="button"
-                                :disabled="points < reward.required_points"
+                                :disabled="redeeming || points < reward.required_points"
                                 class="rounded-2xl border p-4 text-left transition"
                                 :class="
-                                    points < reward.required_points
+                                    redeeming || points < reward.required_points
                                         ? 'cursor-not-allowed border-slate-100 bg-slate-50 opacity-60'
                                         : 'border-amber-300 bg-amber-50 shadow-sm hover:-translate-y-0.5 hover:border-amber-400 hover:bg-amber-100'
                                 "
@@ -88,7 +89,7 @@ const redeemableCount = computed(
                                     <span
                                         class="shrink-0 rounded-full px-2.5 py-1 text-xs font-extrabold"
                                         :class="
-                                            points < reward.required_points
+                                            redeeming || points < reward.required_points
                                                 ? 'bg-slate-200 text-slate-500'
                                                 : 'bg-amber-100 text-amber-700'
                                         "
@@ -105,8 +106,8 @@ const redeemableCount = computed(
                                     v-else
                                     class="mt-2 flex items-center justify-between gap-3 text-xs font-extrabold text-amber-800"
                                 >
-                                    <span>Sau khi đổi còn {{ points - reward.required_points }} ⭐</span>
-                                    <span class="rounded-lg bg-amber-500 px-2.5 py-1 text-white">Đổi ngay</span>
+                                    <span>Sau khi được duyệt còn {{ points - reward.required_points }} ⭐</span>
+                                    <span class="rounded-lg bg-amber-500 px-2.5 py-1 text-white">Gửi yêu cầu</span>
                                 </div>
                             </button>
 

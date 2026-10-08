@@ -54,6 +54,7 @@ class DatabaseSeeder extends Seeder
                 ...$child,
                 'email' => null,
                 'password' => null,
+                'child_pin' => Hash::make('1234'),
                 'avatar' => null,
                 'is_active' => true,
             ],

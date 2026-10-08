@@ -53,9 +53,16 @@ class TaskCalendarController extends Controller
             'user_ids' => ['nullable', 'array', 'min:1'],
             'user_ids.*' => ['integer', 'distinct', Rule::exists('users', 'id')->where('role', UserRole::CHILD->value)],
             'task_ids' => ['required', 'array', 'min:1'],
-            'task_ids.*' => ['integer', 'distinct', Rule::exists('tasks', 'id')],
+            'task_ids.*' => [
+                'integer',
+                'distinct',
+                Rule::exists('tasks', 'id')
+                    ->whereNull('user_id')
+                    ->where('is_active', true),
+            ],
             'dates' => ['required', 'array', 'min:1', 'max:93'],
             'dates.*' => ['date', 'distinct'],
+            'reminder_time' => ['nullable', 'date_format:H:i'],
         ]);
 
         $userIds = collect($data['user_ids'] ?? [$data['user_id'] ?? null])->filter()->unique()->values();
@@ -78,6 +85,7 @@ class TaskCalendarController extends Controller
 
         $tasks = Task::query()
             ->where('is_active', true)
+            ->whereNull('user_id')
             ->whereIn('id', $data['task_ids'])
             ->get();
 
@@ -94,11 +102,15 @@ class TaskCalendarController extends Controller
                 $date = Carbon::parse($date)->toDateString();
 
                 foreach ($tasks as $task) {
-                    $childTask = (int) $task->user_id === $userId ? $task : $this->taskForChild($task, $userId);
+                    $childTask = $this->taskForChild($task, $userId);
 
-                    DailyTask::query()->firstOrCreate(
+                    DailyTask::query()->updateOrCreate(
                         ['task_id' => $childTask->id, 'date' => $date],
-                        ['user_id' => $childTask->user_id, 'status' => DailyTaskStatus::PENDING->value],
+                        [
+                            'user_id' => $childTask->user_id,
+                            'reminder_time' => $data['reminder_time'] ?? null,
+                            'status' => DailyTaskStatus::PENDING->value,
+                        ],
                     );
                 }
             }
@@ -142,14 +154,15 @@ class TaskCalendarController extends Controller
         return Task::query()->firstOrCreate(
             [
                 'user_id' => $userId,
-                'title' => $template->title,
+                'template_task_id' => $template->id,
                 'category_id' => $template->category_id,
+                'title' => $template->title,
+                'icon' => $template->icon,
                 'points' => $template->points,
                 'is_active' => true,
             ],
             [
                 'description' => $template->description,
-                'icon' => $template->icon,
             ],
         );
     }

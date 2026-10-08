@@ -11,7 +11,9 @@ const props = defineProps({
 const emit = defineEmits(["close"]);
 
 const totalPoints = computed(() =>
-    props.history.reduce((sum, item) => sum + Number(item.points_spent || 0), 0),
+    props.history
+        .filter((item) => item.status === "approved")
+        .reduce((sum, item) => sum + Number(item.points_spent || 0), 0),
 );
 
 function formatDate(value) {
@@ -26,6 +28,22 @@ function formatDate(value) {
         hour: "2-digit",
         minute: "2-digit",
     }).format(new Date(value));
+}
+
+function statusLabel(status) {
+    return {
+        pending: "Chờ phụ huynh duyệt",
+        approved: "Đã duyệt",
+        rejected: "Đã từ chối",
+    }[status] || "—";
+}
+
+function statusClass(status) {
+    return {
+        pending: "bg-sky-100 text-sky-700",
+        approved: "bg-emerald-100 text-emerald-700",
+        rejected: "bg-slate-100 text-slate-600",
+    }[status] || "bg-slate-100 text-slate-600";
 }
 </script>
 
@@ -82,12 +100,12 @@ function formatDate(value) {
                                         Đã đổi
                                     </p>
                                     <p class="mt-1 text-2xl font-extrabold text-slate-900">
-                                        {{ history.length }}
+                                        {{ history.filter((item) => item.status === "approved").length }}
                                     </p>
                                 </div>
                                 <div class="rounded-2xl bg-emerald-50 p-4 ring-1 ring-emerald-100">
                                     <p class="text-xs font-bold uppercase text-slate-600">
-                                        Sao đã dùng
+                                    Sao đã dùng
                                     </p>
                                     <p class="mt-1 text-2xl font-extrabold text-slate-900">
                                         {{ totalPoints }} ⭐
@@ -124,6 +142,9 @@ function formatDate(value) {
                                                     -{{ item.points_spent }} ⭐
                                                 </span>
                                             </div>
+                                            <span class="mt-2 inline-flex rounded-full px-2.5 py-1 text-xs font-extrabold" :class="statusClass(item.status)">
+                                                {{ statusLabel(item.status) }}
+                                            </span>
                                             <p
                                                 v-if="item.reward?.description"
                                                 class="mt-1 text-sm font-medium leading-6 text-slate-600"
@@ -132,7 +153,7 @@ function formatDate(value) {
                                             </p>
                                             <p class="mt-2 inline-flex items-center gap-1.5 text-xs font-bold text-slate-500">
                                                 <Clock3 class="h-3.5 w-3.5" />
-                                                {{ formatDate(item.redeemed_at) }}
+                                                {{ formatDate(item.redeemed_at || item.requested_at) }}
                                             </p>
                                         </div>
                                     </div>

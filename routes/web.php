@@ -17,18 +17,22 @@ Route::view('/', 'welcome');
 
 Route::prefix('api')->group(function () {
     Route::get('children', [ChildController::class, 'index']);
-    Route::get('children/{user}/today', [ChildController::class, 'today']);
-    Route::get('children/{user}/daily-tasks', [ChildController::class, 'dailyTasks']);
-    Route::patch('children/{user}/daily-tasks/draft', [ChildController::class, 'saveDailyTaskDraft']);
-    Route::post('children/{user}/daily-tasks/submit', [ChildController::class, 'submitDailyTasks']);
-    Route::get('children/{user}/progress', [ChildController::class, 'progress']);
-    Route::get('children/{user}/achievements', [ChildController::class, 'achievements']);
-    Route::get('children/{user}/rewards', [ChildController::class, 'rewards']);
-    Route::get('children/{user}/reward-history', [ChildController::class, 'rewardHistory']);
-    Route::post('children/{user}/rewards/{reward}/redeem', [ChildController::class, 'redeem']);
+    Route::post('children/{user}/unlock', [ChildController::class, 'unlock']);
 
-    Route::patch('daily-tasks/{dailyTask}/complete', [DailyTaskController::class, 'complete']);
-    Route::patch('daily-tasks/{dailyTask}/uncomplete', [DailyTaskController::class, 'uncomplete']);
+    Route::middleware('child.access')->group(function () {
+        Route::get('children/{user}/today', [ChildController::class, 'today']);
+        Route::get('children/{user}/daily-tasks', [ChildController::class, 'dailyTasks']);
+        Route::patch('children/{user}/daily-tasks/draft', [ChildController::class, 'saveDailyTaskDraft']);
+        Route::post('children/{user}/daily-tasks/submit', [ChildController::class, 'submitDailyTasks']);
+        Route::get('children/{user}/progress', [ChildController::class, 'progress']);
+        Route::get('children/{user}/achievements', [ChildController::class, 'achievements']);
+        Route::get('children/{user}/rewards', [ChildController::class, 'rewards']);
+        Route::get('children/{user}/reward-history', [ChildController::class, 'rewardHistory']);
+        Route::post('children/{user}/rewards/{reward}/redeem', [ChildController::class, 'redeem']);
+
+        Route::patch('daily-tasks/{dailyTask}/complete', [DailyTaskController::class, 'complete']);
+        Route::patch('daily-tasks/{dailyTask}/uncomplete', [DailyTaskController::class, 'uncomplete']);
+    });
 
     Route::post('auth/login', [AuthController::class, 'login']);
     Route::post('auth/logout', [AuthController::class, 'logout']);
@@ -43,6 +47,8 @@ Route::prefix('api')->group(function () {
         Route::delete('task-calendar/{dailyTask}', [TaskCalendarController::class, 'destroy']);
         Route::get('task-history', [TaskHistoryController::class, 'index']);
         Route::get('reward-history', [RewardHistoryController::class, 'index']);
+        Route::patch('reward-history/{redemption}/approve', [RewardHistoryController::class, 'approve']);
+        Route::patch('reward-history/{redemption}/reject', [RewardHistoryController::class, 'reject']);
         Route::apiResource('tasks', TaskManagementController::class)->except(['show']);
         Route::apiResource('rewards', RewardManagementController::class)->except(['show']);
         Route::apiResource('achievements', AchievementController::class)->except(['show']);

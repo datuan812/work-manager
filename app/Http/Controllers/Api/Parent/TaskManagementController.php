@@ -24,6 +24,8 @@ class TaskManagementController extends Controller
         $data = $request->validate($this->rules());
         $schedule = $data['schedule'] ?? null;
         unset($data['schedule']);
+        $data['user_id'] = null;
+        $data['template_task_id'] = null;
 
         $task = Task::create($data);
 
@@ -62,7 +64,8 @@ class TaskManagementController extends Controller
     private function rules(bool $creating = true): array
     {
         return [
-            'user_id' => ['nullable', Rule::exists('users', 'id')],
+            'user_id' => ['prohibited'],
+            'template_task_id' => ['prohibited'],
             'category_id' => [$creating ? 'required' : 'sometimes', Rule::exists('task_categories', 'id')],
             'title' => [$creating ? 'required' : 'sometimes', 'string', 'max:255'],
             'description' => ['nullable', 'string'],

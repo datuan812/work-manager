@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted } from 'vue'
-import { Flame, ListChecks, Star, Trophy, Users } from 'lucide-vue-next'
+import { Clock3, Flame, ListChecks, Star, Trophy, Users } from 'lucide-vue-next'
 import ParentLayout from '../../layouts/ParentLayout.vue'
 import ProgressBar from '../../components/common/ProgressBar.vue'
 import AvatarPhoto from '../../components/common/AvatarPhoto.vue'
@@ -57,6 +57,20 @@ onMounted(() => parent.loadDashboard())
                 <div class="mt-4 flex justify-between text-sm font-bold text-slate-600">
                     <span>{{ child.streak }} ngày streak</span>
                     <span>⭐ {{ child.points }}</span>
+                </div>
+                <div v-if="child.next_reminder" class="mt-4 rounded-xl bg-sky-50 px-3 py-2 ring-1 ring-sky-100">
+                    <div class="flex items-center justify-between gap-3 text-sm font-bold">
+                        <span class="inline-flex min-w-0 items-center gap-2 text-sky-800">
+                            <Clock3 class="h-4 w-4 shrink-0" />
+                            <span class="truncate">{{ child.next_reminder.task_icon || '⭐' }} {{ child.next_reminder.task_title }}</span>
+                        </span>
+                        <span class="shrink-0 rounded-full px-2 py-0.5 text-xs" :class="child.next_reminder.is_due ? 'bg-amber-100 text-amber-800' : 'bg-white text-sky-700'">
+                            {{ child.next_reminder.time }}
+                        </span>
+                    </div>
+                    <p v-if="child.reminders_due" class="mt-1 text-xs font-bold text-amber-700">
+                        {{ child.reminders_due }} việc đã tới giờ.
+                    </p>
                 </div>
             </article>
         </div>

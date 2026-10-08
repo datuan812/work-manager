@@ -32,6 +32,13 @@ export const useChildStore = defineStore('child', {
             this.selectedChildId = Number(id)
             sessionStorage.setItem('selectedChildId', String(id))
         },
+        async unlockChild(id, pin) {
+            return this.withLoading('unlockChild', async () => {
+                const result = await childService.unlock(id, pin)
+                this.selectChild(id)
+                return result
+            })
+        },
         async loadToday(id = this.selectedChildId) {
             return this.withLoading('dashboard', async () => {
                 this.dashboard = await childService.today(id)

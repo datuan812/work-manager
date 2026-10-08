@@ -2,6 +2,7 @@ import { api } from './api.service'
 
 export const childService = {
     list: () => api('/api/children'),
+    unlock: (childId, pin) => api(`/api/children/${childId}/unlock`, { method: 'POST', body: { pin } }),
     today: (childId) => api(`/api/children/${childId}/today`),
     dailyTasks: (childId, date) => api(`/api/children/${childId}/daily-tasks?${new URLSearchParams({ date })}`),
     saveDailyTaskDraft: (childId, payload) => api(`/api/children/${childId}/daily-tasks/draft`, { method: 'PATCH', body: payload }),

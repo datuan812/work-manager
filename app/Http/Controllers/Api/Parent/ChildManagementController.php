@@ -19,6 +19,7 @@ class ChildManagementController extends Controller
     {
         $data = $request->validate($this->rules());
         $data = $this->storeAvatar($request, $data);
+        $data = $this->prepareChildPin($data);
         $data['role'] = UserRole::CHILD;
         $data['email'] = null;
         $data['password'] = null;
@@ -38,6 +39,7 @@ class ChildManagementController extends Controller
         abort_unless($user->isChild(), 404);
 
         $data = $this->storeAvatar($request, $request->validate($this->rules(false)), $user);
+        $data = $this->prepareChildPin($data);
 
         $user->update($data);
 
@@ -58,8 +60,23 @@ class ChildManagementController extends Controller
             'name' => [$creating ? 'required' : 'sometimes', 'string', 'max:255'],
             'avatar_file' => ['nullable', 'image', 'max:2048'],
             'date_of_birth' => ['nullable', 'date'],
+            'access_pin' => [$creating ? 'required' : 'nullable', 'digits_between:4,6'],
             'is_active' => ['sometimes', 'boolean'],
         ];
+    }
+
+    private function prepareChildPin(array $data): array
+    {
+        if (array_key_exists('access_pin', $data)) {
+            $pin = $data['access_pin'];
+            unset($data['access_pin']);
+
+            if ($pin !== null && $pin !== '') {
+                $data['child_pin'] = $pin;
+            }
+        }
+
+        return $data;
     }
 
     private function storeAvatar(Request $request, array $data, ?User $user = null): array

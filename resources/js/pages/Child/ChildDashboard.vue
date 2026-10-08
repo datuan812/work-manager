@@ -100,6 +100,12 @@ const displayedProgress = computed(() => {
         percent: total ? Math.round((completed / total) * 100) : 0,
     };
 });
+const dueReminders = computed(() => {
+    const now = new Date();
+    const currentTime = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+
+    return displayedTasks.value.filter((task) => task.reminder_time && task.status !== "completed" && task.reminder_time <= currentTime);
+});
 const submitHint = computed(() => {
     if (selectedDay.value === "tomorrow") {
         return "Ngày mai chỉ xem trước, chưa thể tích hoặc hoàn thành.";
@@ -141,11 +147,16 @@ function syncDraft() {
 
 async function load() {
     childStore.selectChild(route.params.id);
-    await Promise.all([
-        childStore.loadDailyTasks(route.params.id, selectedDate.value),
-        childStore.loadRewards(route.params.id),
-    ]);
-    syncDraft();
+    try {
+        await Promise.all([
+            childStore.loadDailyTasks(route.params.id, selectedDate.value),
+            childStore.loadRewards(route.params.id),
+        ]);
+        syncDraft();
+    } catch (error) {
+        toast.show(error.message, "error");
+        router.push("/");
+    }
 }
 
 async function selectDay(day) {
@@ -200,6 +211,10 @@ async function submitDay() {
 }
 
 function requestRedeem(reward) {
+    if (childStore.loadingStates.redeem) {
+        return;
+    }
+
     if (dashboard.value && dashboard.value.points < reward.required_points) {
         return;
     }
@@ -217,7 +232,7 @@ async function redeem() {
         await childStore.redeem(reward.id);
         await childStore.loadDailyTasks(route.params.id, selectedDate.value);
         syncDraft();
-        toast.show(`Đã đổi: ${reward.title}`);
+        toast.show(`Đã gửi yêu cầu đổi: ${reward.title}`);
     } catch (error) {
         toast.show(error.message, "error");
     }
@@ -426,6 +441,18 @@ onMounted(load);
                         </div>
                     </div>
 
+                    <div
+                        v-if="dueReminders.length && canEditTasks"
+                        class="mt-4 rounded-[1.25rem] bg-amber-50 p-4 ring-1 ring-amber-100"
+                    >
+                        <p class="text-sm font-extrabold text-amber-900">
+                            Đến giờ làm {{ dueReminders.length }} nhiệm vụ rồi.
+                        </p>
+                        <p class="mt-1 text-sm font-semibold text-amber-800/80">
+                            {{ dueReminders.slice(0, 2).map((task) => `${task.reminder_time} · ${task.task.title}`).join(" · ") }}
+                        </p>
+                    </div>
+
                     <div class="mt-4 grid gap-4 md:grid-cols-2">
                         <TaskCard
                             v-for="dailyTask in displayedTasks"
@@ -499,6 +526,7 @@ onMounted(load);
             :points="dashboard?.points ?? 0"
             :rewards="childStore.rewards?.rewards ?? []"
             :loading="childStore.loadingStates.rewards && !childStore.rewards"
+            :redeeming="childStore.loadingStates.redeem"
             @close="showRewards = false"
             @redeem="requestRedeem"
         />
@@ -510,6 +538,7 @@ onMounted(load);
             confirm-text="Đổi thưởng"
             cancel-text="Xem lại"
             variant="default"
+            :loading="childStore.loadingStates.redeem"
             @confirm="redeem"
             @cancel="rewardToRedeem = null"
         />
