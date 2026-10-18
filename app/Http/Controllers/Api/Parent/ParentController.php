@@ -62,7 +62,12 @@ class ParentController extends Controller
                 ];
             });
 
-        return ['children' => $children];
+        return [
+            'children' => $children,
+            'pending_reward_count' => RewardRedemption::query()
+                ->where('status', 'pending')
+                ->count(),
+        ];
     }
 
     public function statistics(Request $request)

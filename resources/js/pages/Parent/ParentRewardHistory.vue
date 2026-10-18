@@ -1,5 +1,6 @@
 <script setup>
 import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { CalendarDays, Check, Gift, RotateCcw, Sparkles, Star, Users, X } from 'lucide-vue-next'
 import ParentLayout from '../../layouts/ParentLayout.vue'
 import BaseButton from '../../components/common/BaseButton.vue'
@@ -10,13 +11,14 @@ import { useParentStore } from '../../stores/parent.store'
 import { useToastStore } from '../../stores/toast.store'
 
 const parent = useParentStore()
+const route = useRoute()
 const toast = useToastStore()
 const confirmAction = reactive({ show: false, item: null, action: '' })
 const filters = reactive({
     start_date: dateKey(daysAgo(30)),
     end_date: dateKey(new Date()),
     user_id: '',
-    status: '',
+    status: route.query.status === 'pending' ? 'pending' : '',
     per_page: 25,
     page: 1,
 })

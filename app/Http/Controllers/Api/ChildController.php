@@ -96,6 +96,12 @@ class ChildController extends Controller
             ->orderBy('id')
             ->get();
 
+        if ($dailyTasks->isEmpty()) {
+            throw ValidationException::withMessages([
+                'tasks' => 'Chưa có nhiệm vụ nào để hoàn thành.',
+            ]);
+        }
+
         $allowedIds = $dailyTasks->pluck('id');
         $completedTaskIds = collect($validated['completed_task_ids'] ?? [])
             ->map(fn ($id) => (int) $id)

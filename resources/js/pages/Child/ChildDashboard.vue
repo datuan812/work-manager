@@ -22,6 +22,7 @@ const busyId = ref(null);
 const showRewards = ref(false);
 const showRewardHistory = ref(false);
 const rewardToRedeem = ref(null);
+const showSubmitConfirmation = ref(false);
 const selectedDay = ref("today");
 const draftCompletedIds = ref(new Set());
 
@@ -106,7 +107,19 @@ const dueReminders = computed(() => {
 
     return displayedTasks.value.filter((task) => task.reminder_time && task.status !== "completed" && task.reminder_time <= currentTime);
 });
+const submitDisabled = computed(
+    () =>
+        !dashboardReady.value ||
+        !dayStatus.value.can_submit ||
+        displayedTasks.value.length === 0 ||
+        childStore.loadingStates.taskDraft ||
+        childStore.loadingStates.submitDailyTasks,
+);
 const submitHint = computed(() => {
+    if (displayedTasks.value.length === 0) {
+        return "Chưa có nhiệm vụ nào được giao cho ngày này.";
+    }
+
     if (selectedDay.value === "tomorrow") {
         return "Ngày mai chỉ xem trước, chưa thể tích hoặc hoàn thành.";
     }
@@ -191,7 +204,7 @@ async function toggleTask(task) {
 }
 
 async function submitDay() {
-    if (!canEditTasks.value) {
+    if (submitDisabled.value) {
         return;
     }
 
@@ -208,6 +221,14 @@ async function submitDay() {
     } catch (error) {
         toast.show(error.message, "error");
     }
+}
+
+function requestSubmitDay() {
+    if (submitDisabled.value) {
+        return;
+    }
+
+    showSubmitConfirmation.value = true;
 }
 
 function requestRedeem(reward) {
@@ -426,11 +447,10 @@ onMounted(load);
                             <button
                                 v-if="canEditTasks"
                                 type="button"
-                                class="rounded-full bg-emerald-500 px-5 py-3 text-sm font-extrabold text-white shadow-lg shadow-emerald-200 transition hover:bg-emerald-600 focus:outline-none focus:ring-4 focus:ring-emerald-200 disabled:cursor-wait disabled:opacity-70"
-                                :disabled="
-                                    childStore.loadingStates.submitDailyTasks
-                                "
-                                @click="submitDay"
+                                class="rounded-full bg-emerald-500 px-5 py-3 text-sm font-extrabold text-white shadow-lg shadow-emerald-200 transition hover:bg-emerald-600 focus:outline-none focus:ring-4 focus:ring-emerald-200 disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:bg-emerald-500"
+                                :disabled="submitDisabled"
+                                @click="requestSubmitDay"
+                                :class="submitDisabled ? '!cursor-not-allowed' : ''"
                             >
                                 {{
                                     childStore.loadingStates.submitDailyTasks
@@ -529,6 +549,16 @@ onMounted(load);
             :redeeming="childStore.loadingStates.redeem"
             @close="showRewards = false"
             @redeem="requestRedeem"
+        />
+
+        <ConfirmDialog
+            v-model="showSubmitConfirmation"
+            title="Hoàn thành nhiệm vụ"
+            :message="`Con đã chọn ${displayedProgress.completed}/${displayedProgress.total} nhiệm vụ. Con chắc chắn muốn hoàn thành chứ?`"
+            confirm-text="Hoàn thành"
+            cancel-text="Xem lại"
+            variant="default"
+            @confirm="submitDay"
         />
 
         <ConfirmDialog

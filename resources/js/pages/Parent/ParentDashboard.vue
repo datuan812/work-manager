@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onMounted } from 'vue'
-import { Clock3, Flame, ListChecks, Star, Trophy, Users } from 'lucide-vue-next'
+import { useRouter } from 'vue-router'
+import { Clock3, Flame, Gift, ListChecks, Star, Trophy, Users } from 'lucide-vue-next'
 import ParentLayout from '../../layouts/ParentLayout.vue'
 import ProgressBar from '../../components/common/ProgressBar.vue'
 import AvatarPhoto from '../../components/common/AvatarPhoto.vue'
@@ -8,7 +9,9 @@ import LoadingState from '../../components/common/LoadingState.vue'
 import { useParentStore } from '../../stores/parent.store'
 
 const parent = useParentStore()
+const router = useRouter()
 const children = computed(() => parent.dashboard?.children ?? [])
+const pendingRewardCount = computed(() => Number(parent.dashboard?.pending_reward_count ?? 0))
 const rankedChildren = computed(() =>
     [...children.value].sort((a, b) =>
         b.completion_percent - a.completion_percent ||
@@ -27,6 +30,10 @@ function barWidth(value, max = 100) {
     return `${Math.max(Number(value || 0) ? 6 : 0, Math.round((Number(value || 0) / max) * 100))}%`
 }
 
+function openPendingRewardHistory() {
+    router.push({ path: '/parent/reward-history', query: { status: 'pending' } })
+}
+
 onMounted(() => parent.loadDashboard())
 </script>
 
@@ -38,6 +45,26 @@ onMounted(() => parent.loadDashboard())
                 <h1 class="mt-1 text-3xl font-bold">Tổng quan hôm nay</h1>
             </div>
         </div>
+
+        <button
+            v-if="pendingRewardCount"
+            type="button"
+            class="mt-5 flex w-full items-center gap-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-left shadow-sm transition hover:border-amber-300 hover:bg-amber-100 focus:outline-none focus:ring-4 focus:ring-amber-100"
+            @click="openPendingRewardHistory"
+        >
+            <span class="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-amber-100 text-amber-700">
+                <Gift class="h-5 w-5" />
+            </span>
+            <span class="min-w-0 flex-1">
+                <span class="block font-bold text-slate-950">
+                    {{ pendingRewardCount }} yêu cầu đổi thưởng đang chờ duyệt
+                </span>
+                <span class="mt-1 block text-sm font-semibold text-amber-800">
+                    Bấm để xem và xử lý các yêu cầu của bé.
+                </span>
+            </span>
+            <span class="shrink-0 text-sm font-bold text-amber-800">Xem lịch sử →</span>
+        </button>
 
         <LoadingState v-if="parent.loadingStates.dashboard && !parent.dashboard" class="mt-6" title="Đang tải dashboard" message="KidTask đang tổng hợp tiến độ hôm nay." :rows="4" />
 
