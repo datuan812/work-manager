@@ -173,7 +173,7 @@ async function load() {
         syncDraft();
     } catch (error) {
         toast.show(error.message, "error");
-        router.push("/");
+        router.push("/family");
     }
 }
 
@@ -285,7 +285,7 @@ onMounted(load);
         <ChildHeader
             :points="dashboard?.points ?? 0"
             :rewards-open="showRewards"
-            @change-child="router.push('/')"
+            @change-child="router.push('/family')"
             @show-history="openRewardHistory"
             @toggle-rewards="toggleRewards"
         />

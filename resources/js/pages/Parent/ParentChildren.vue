@@ -1,5 +1,6 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import ParentLayout from '../../layouts/ParentLayout.vue'
 import BaseButton from '../../components/common/BaseButton.vue'
 import BaseInput from '../../components/common/BaseInput.vue'
@@ -8,9 +9,12 @@ import LoadingState from '../../components/common/LoadingState.vue'
 import ConfirmDialog from "../../components/common/ConfirmDialog.vue";
 import { useParentStore } from '../../stores/parent.store'
 import { useToastStore } from '../../stores/toast.store'
+import { useAuthStore } from '../../stores/auth.store'
 import { CalendarDays, Eye, EyeOff, SquarePen, Trash2 } from 'lucide-vue-next'
 
 const parent = useParentStore()
+const router = useRouter()
+const auth = useAuthStore()
 const toast = useToastStore()
 const confirmDelete = reactive({ show: false, id: null });
 const fileInput = ref(null)
@@ -20,6 +24,7 @@ const form = reactive({ id: null, name: '', avatar: '', avatar_file: null, avata
 const dateOfBirthInput = ref('')
 const errors = reactive({ name: '', date_of_birth: '', access_pin: '', avatar_file: '' })
 const previewAvatar = computed(() => form.avatar_preview || form.avatar)
+const parentFamilyCode = computed(() => auth.user?.family_code || `Family #${auth.user?.family_id || '—'}`)
 
 function normalizeDate(value) {
     if (!value) return ''
@@ -101,6 +106,9 @@ function edit(child) {
     showPin.value = false
     clearErrors()
     if (fileInput.value) fileInput.value.value = ''
+}
+function openChild(child) {
+    router.push(`/child/${child.id}`)
 }
 function reset() {
     Object.assign(form, { id: null, name: '', avatar: '', avatar_file: null, avatar_preview: '', date_of_birth: '', access_pin: '', is_active: true })
@@ -194,7 +202,7 @@ onMounted(() => parent.loadChildren())
                             <input
                                 v-model="form.access_pin"
                                 :type="showPin ? 'text' : 'password'"
-                                :placeholder="form.id ? 'Bỏ trống nếu giữ nguyên' : '4-6 số'"
+                                :placeholder="form.id ? 'Nhập mã PIN' : '4-6 số'"
                                 inputmode="numeric"
                                 maxlength="6"
                                 :aria-invalid="!!errors.access_pin"
@@ -252,7 +260,7 @@ onMounted(() => parent.loadChildren())
 
             <div v-else class="admin-card overflow-hidden">
                 <table class="admin-table">
-                    <thead><tr><th>Tên</th><th>Ngày sinh</th><th>Trạng thái</th><th></th></tr></thead>
+                    <thead><tr><th>Tên bé</th><th>Ngày sinh</th><th>Trạng thái</th><th></th></tr></thead>
                     <tbody>
                         <tr v-for="child in parent.children" :key="child.id">
                             <td>
@@ -262,8 +270,8 @@ onMounted(() => parent.loadChildren())
                                 </div>
                             </td>
                             <td class="text-slate-600">{{ formatDate(child.date_of_birth) }}</td>
-                            <td><span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">{{ child.is_active ? 'Hoạt động' : 'Không hoạt động' }}</span></td>
-                            <td class="text-right"><button title="Chỉnh sửa" class="font-bold text-sky-700" @click="edit(child)"><SquarePen /></button><button title="Xóa" class="ml-4 font-bold text-red-700" @click="remove(child.id)"><Trash2 /></button></td>
+                            <td><span class="rounded-full bg-green-300 px-3 py-1 text-xs font-bold text-slate-600">{{ child.is_active ? 'Hoạt động' : 'Không hoạt động' }}</span></td>
+                            <td class="text-right"><button v-if="child.is_active" title="Mở khu vực nhiệm vụ" class="font-bold text-emerald-700" @click="openChild(child)"><Eye /></button><button title="Chỉnh sửa" class="ml-4 font-bold text-sky-700" @click="edit(child)"><SquarePen /></button><button title="Xóa" class="ml-4 font-bold text-red-700" @click="remove(child.id)"><Trash2 /></button></td>
                         </tr>
                     </tbody>
                 </table>

@@ -14,9 +14,63 @@ use App\Services\PointService;
 use App\Services\StreakService;
 use Carbon\CarbonPeriod;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
 
 class ParentController extends Controller
 {
+    public function accessPinStatus(Request $request)
+    {
+        return [
+            'has_pin' => $request->user()->parent_access_pin !== null,
+            'enabled' => (bool) $request->user()->parent_access_pin_enabled,
+            'granted' => $request->session()->get('parent_access_granted') === true,
+        ];
+    }
+
+    public function setAccessPin(Request $request)
+    {
+        $validated = $request->validate([
+            'pin' => ['required', 'digits_between:4,6'],
+        ]);
+
+        $request->user()->update(['parent_access_pin' => $validated['pin']]);
+        $request->session()->put('parent_access_granted', true);
+
+        return ['has_pin' => true, 'enabled' => true, 'granted' => true];
+    }
+
+    public function toggleAccessPin(Request $request)
+    {
+        $validated = $request->validate(['enabled' => ['required', 'boolean']]);
+        $request->user()->update(['parent_access_pin_enabled' => $validated['enabled']]);
+
+        if (! $validated['enabled']) {
+            $request->session()->forget('parent_access_granted');
+        }
+
+        return [
+            'has_pin' => $request->user()->parent_access_pin !== null,
+            'enabled' => (bool) $validated['enabled'],
+            'granted' => $request->session()->get('parent_access_granted') === true,
+        ];
+    }
+
+    public function verifyAccessPin(Request $request)
+    {
+        $validated = $request->validate([
+            'pin' => ['required', 'digits_between:4,6'],
+        ]);
+
+        if (! $request->user()->parent_access_pin_enabled || ! $request->user()->parent_access_pin || ! Hash::check($validated['pin'], $request->user()->parent_access_pin)) {
+            throw ValidationException::withMessages(['pin' => 'Mã khu vực phụ huynh không đúng.']);
+        }
+
+        $request->session()->put('parent_access_granted', true);
+
+        return ['granted' => true];
+    }
+
     public function dashboard(PointService $points, StreakService $streaks)
     {
         $today = today('Asia/Ho_Chi_Minh');

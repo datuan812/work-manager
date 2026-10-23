@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\ChildController;
 use App\Http\Controllers\Api\DailyTaskController;
 use App\Http\Controllers\Api\Parent\AchievementController;
@@ -35,10 +36,25 @@ Route::prefix('api')->group(function () {
     });
 
     Route::post('auth/login', [AuthController::class, 'login']);
+    Route::post('auth/family-login', [AuthController::class, 'familyLogin']);
     Route::post('auth/logout', [AuthController::class, 'logout']);
     Route::get('auth/me', [AuthController::class, 'me'])->middleware('auth');
 
+    Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
+        Route::get('users', [AdminController::class, 'users']);
+        Route::patch('users/{user}', [AdminController::class, 'updateUser']);
+        Route::get('families', [AdminController::class, 'families']);
+        Route::post('families', [AdminController::class, 'storeFamily']);
+        Route::patch('families/{family}', [AdminController::class, 'updateFamily']);
+        Route::delete('families/{family}', [AdminController::class, 'destroyFamily']);
+    });
+
     Route::middleware(['auth', 'parent'])->prefix('parent')->group(function () {
+        Route::get('access-pin', [ParentController::class, 'accessPinStatus']);
+        Route::put('access-pin', [ParentController::class, 'setAccessPin']);
+        Route::patch('access-pin/toggle', [ParentController::class, 'toggleAccessPin']);
+        Route::post('access-pin/verify', [ParentController::class, 'verifyAccessPin']);
+        Route::middleware('parent.access')->group(function () {
         Route::get('/', [ParentController::class, 'dashboard']);
         Route::get('statistics', [ParentController::class, 'statistics']);
         Route::apiResource('children', ChildManagementController::class)->parameters(['children' => 'user']);
@@ -52,6 +68,7 @@ Route::prefix('api')->group(function () {
         Route::apiResource('tasks', TaskManagementController::class)->except(['show']);
         Route::apiResource('rewards', RewardManagementController::class)->except(['show']);
         Route::apiResource('achievements', AchievementController::class)->except(['show']);
+        });
     });
 });
 

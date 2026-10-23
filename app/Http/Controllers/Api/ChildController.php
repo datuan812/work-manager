@@ -25,6 +25,13 @@ class ChildController extends Controller
 {
     public function index()
     {
+        if (session()->has('family_id')) {
+            // User's family scope is applied by the model; this endpoint no
+            // longer exposes profiles from every family to anonymous clients.
+        } else {
+            return [];
+        }
+
         return User::query()
             ->where('role', UserRole::CHILD)
             ->where('is_active', true)
@@ -36,6 +43,7 @@ class ChildController extends Controller
     public function unlock(Request $request, User $user)
     {
         abort_unless($user->isChild() && $user->is_active, 404);
+        abort_unless(session()->get('family_id') === null || session()->get('family_id') === $user->family_id, 404);
 
         $validated = $request->validate([
             'pin' => ['required', 'digits_between:4,6'],
@@ -48,6 +56,7 @@ class ChildController extends Controller
         }
 
         $request->session()->put("child_access.{$user->id}", true);
+        $request->session()->put('family_id', $user->family_id);
 
         return ['child' => $this->childPayload($user)];
     }
@@ -138,7 +147,7 @@ class ChildController extends Controller
 
             DailyTaskSubmission::query()->firstOrCreate(
                 ['user_id' => $user->id, 'date' => $date->toDateString()],
-                ['submitted_at' => now()],
+                ['family_id' => $user->family_id, 'submitted_at' => now()],
             );
 
             DailyTaskDraft::query()
@@ -185,7 +194,7 @@ class ChildController extends Controller
 
         DailyTaskDraft::query()->updateOrCreate(
             ['user_id' => $user->id, 'date' => $date->toDateString()],
-            ['completed_task_ids' => $completedTaskIds],
+            ['family_id' => $user->family_id, 'completed_task_ids' => $completedTaskIds],
         );
 
         return $this->dailyTasksForDate($user, $generator, $points, $streaks, $date->toDateString());
@@ -368,6 +377,7 @@ class ChildController extends Controller
             'name' => $child->name,
             'avatar' => $child->avatar,
             'date_of_birth' => $child->date_of_birth?->toDateString(),
+            'family_id' => $child->family_id,
             'requires_pin' => $child->child_pin !== null,
         ];
     }

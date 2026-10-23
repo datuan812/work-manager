@@ -5,10 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use App\Models\Concerns\BelongsToFamily;
 
-#[Fillable(['code', 'title', 'description', 'icon', 'criteria', 'is_active'])]
+#[Fillable(['family_id', 'code', 'title', 'description', 'icon', 'criteria', 'is_active'])]
 class Achievement extends Model
 {
+    use BelongsToFamily;
     protected function casts(): array
     {
         return ['criteria' => 'array', 'is_active' => 'boolean'];

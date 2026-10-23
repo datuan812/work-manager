@@ -5,10 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Models\Concerns\BelongsToFamily;
 
-#[Fillable(['user_id', 'date', 'completed_task_ids'])]
+#[Fillable(['family_id', 'user_id', 'date', 'completed_task_ids'])]
 class DailyTaskDraft extends Model
 {
+    use BelongsToFamily;
     protected function casts(): array
     {
         return [

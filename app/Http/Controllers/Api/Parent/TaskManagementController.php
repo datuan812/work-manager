@@ -26,6 +26,7 @@ class TaskManagementController extends Controller
         unset($data['schedule']);
         $data['user_id'] = null;
         $data['template_task_id'] = null;
+        $data['family_id'] = $request->user()->family_id;
 
         $task = Task::create($data);
 

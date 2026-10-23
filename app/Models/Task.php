@@ -7,10 +7,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use App\Models\Concerns\BelongsToFamily;
 
-#[Fillable(['user_id', 'template_task_id', 'category_id', 'title', 'description', 'icon', 'points', 'is_active'])]
+#[Fillable(['family_id', 'user_id', 'template_task_id', 'category_id', 'title', 'description', 'icon', 'points', 'is_active'])]
 class Task extends Model
 {
+    use BelongsToFamily;
     protected function casts(): array
     {
         return ['is_active' => 'boolean', 'points' => 'integer'];

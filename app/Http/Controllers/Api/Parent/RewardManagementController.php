@@ -15,7 +15,7 @@ class RewardManagementController extends Controller
 
     public function store(Request $request)
     {
-        return response()->json(Reward::create($request->validate($this->rules())), 201);
+        return response()->json(Reward::create([...$request->validate($this->rules()), 'family_id' => $request->user()->family_id]), 201);
     }
 
     public function update(Request $request, Reward $reward)

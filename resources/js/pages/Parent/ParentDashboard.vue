@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Clock3, Flame, Gift, ListChecks, Star, Trophy, Users } from 'lucide-vue-next'
+import { Clock3, ExternalLink, Flame, Gift, ListChecks, Star, Trophy, Users } from 'lucide-vue-next'
 import ParentLayout from '../../layouts/ParentLayout.vue'
 import ProgressBar from '../../components/common/ProgressBar.vue'
 import AvatarPhoto from '../../components/common/AvatarPhoto.vue'
@@ -32,6 +32,10 @@ function barWidth(value, max = 100) {
 
 function openPendingRewardHistory() {
     router.push({ path: '/parent/reward-history', query: { status: 'pending' } })
+}
+
+function openChild(child) {
+    router.push(`/child/${child.id}`)
 }
 
 onMounted(() => parent.loadDashboard())
@@ -75,9 +79,7 @@ onMounted(() => parent.loadDashboard())
                         <AvatarPhoto :src="child.avatar" :name="child.name" size="sm" />
                         <h2 class="text-xl font-bold">{{ child.name }}</h2>
                     </div>
-                    <span class="rounded-full px-3 py-1 text-xs font-bold" :class="child.is_active ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100' : 'bg-slate-100 text-slate-500'">
-                        {{ child.is_active ? 'Hoạt động' : 'Không hoạt động' }}
-                    </span>
+                    <div class="flex items-center gap-2"><span class="rounded-full px-3 py-1 text-xs font-bold" :class="child.is_active ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100' : 'bg-slate-100 text-slate-500'">{{ child.is_active ? 'Hoạt động' : 'Không hoạt động' }}</span><button v-if="child.is_active" type="button" class="grid h-9 w-9 place-items-center rounded-xl bg-sky-50 text-sky-700 ring-1 ring-sky-100 hover:bg-sky-100" title="Mở khu vực nhiệm vụ của bé" @click="openChild(child)"><ExternalLink class="h-4 w-4" /></button></div>
                 </div>
                 <p class="mt-5 text-sm font-bold text-slate-600">{{ child.today_completed }} / {{ child.today_total }} nhiệm vụ hoàn thành</p>
                 <ProgressBar class="mt-2" :value="child.completion_percent" />

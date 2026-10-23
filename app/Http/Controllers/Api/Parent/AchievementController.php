@@ -16,7 +16,7 @@ class AchievementController extends Controller
 
     public function store(Request $request)
     {
-        $achievement = Achievement::create($this->validated($request));
+        $achievement = Achievement::create([...$this->validated($request), 'family_id' => $request->user()->family_id]);
 
         return response()->json($achievement->loadCount('users'), 201);
     }

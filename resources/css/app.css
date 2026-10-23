@@ -51,6 +51,13 @@
             linear-gradient(135deg, #f8fbff 0%, #eef7ff 44%, #fff7ed 100%);
     }
 
+    .home-shell { background: radial-gradient(circle at 90% 8%, rgba(255, 211, 91, .28), transparent 18rem), linear-gradient(135deg, #f7fcff 0%, #eef8ff 58%, #e2f2ff 100%); }
+    .tab-button { display: flex; min-height: 4rem; align-items: center; justify-content: center; gap: .5rem; border-radius: .9rem; padding: .6rem; font-size: .875rem; font-weight: 900; color: #557096; transition: .2s; }
+    .tab-active { background: white; color: #1976d2; box-shadow: 0 5px 18px rgba(30, 100, 180, .1); }
+    .field-label { display: block; font-size: .8rem; font-weight: 900; color: #526b8e; }
+    .home-input { display: block; width: 100%; margin-top: .5rem; min-height: 3.5rem; border-radius: 1rem; border: 1px solid #cbdcf0; padding: 0 1rem; font-size: 1rem; font-weight: 600; outline: none; }
+    .home-input:focus { border-color: #2588e8; box-shadow: 0 0 0 4px #dceeff; }
+
     .premium-panel {
         border: 1px solid rgba(255, 255, 255, 0.76);
         background: rgba(255, 255, 255, 0.78);

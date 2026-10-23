@@ -73,6 +73,16 @@ class TaskCalendarController extends Controller
             ]);
         }
 
+        $familyChildCount = User::query()
+            ->where('role', UserRole::CHILD)
+            ->whereIn('id', $userIds)
+            ->count();
+        if ($familyChildCount !== $userIds->count()) {
+            throw ValidationException::withMessages([
+                'user_ids' => 'Một số hồ sơ bé không thuộc gia đình hiện tại.',
+            ]);
+        }
+
         $lockedDates = collect($data['dates'])
             ->map(fn ($date) => Carbon::parse($date)->toDateString())
             ->filter(fn ($date) => Carbon::parse($date)->lte(today('Asia/Ho_Chi_Minh')));
@@ -107,6 +117,7 @@ class TaskCalendarController extends Controller
                     DailyTask::query()->updateOrCreate(
                         ['task_id' => $childTask->id, 'date' => $date],
                         [
+                            'family_id' => $childTask->family_id,
                             'user_id' => $childTask->user_id,
                             'reminder_time' => $data['reminder_time'] ?? null,
                             'status' => DailyTaskStatus::PENDING->value,
@@ -160,6 +171,7 @@ class TaskCalendarController extends Controller
                 'icon' => $template->icon,
                 'points' => $template->points,
                 'is_active' => true,
+                'family_id' => $template->family_id,
             ],
             [
                 'description' => $template->description,

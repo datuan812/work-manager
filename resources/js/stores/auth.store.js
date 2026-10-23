@@ -26,6 +26,11 @@ export const useAuthStore = defineStore('auth', {
             this.user = data.user
             this.checked = true
         },
+        async familyLogin(payload) {
+            const data = await authService.familyLogin(payload)
+            this.user = data.user
+            this.checked = true
+        },
         async logout() {
             await authService.logout()
             this.user = null

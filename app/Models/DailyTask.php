@@ -6,10 +6,12 @@ use App\Enums\DailyTaskStatus;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Models\Concerns\BelongsToFamily;
 
-#[Fillable(['task_id', 'user_id', 'date', 'reminder_time', 'status', 'completed_at'])]
+#[Fillable(['family_id', 'task_id', 'user_id', 'date', 'reminder_time', 'status', 'completed_at'])]
 class DailyTask extends Model
 {
+    use BelongsToFamily;
     protected function casts(): array
     {
         return [

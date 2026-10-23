@@ -16,6 +16,7 @@ class PointService
     public function record(User $child, int $amount, PointTransactionType $type, ?string $referenceType = null, ?int $referenceId = null, ?string $description = null): PointTransaction
     {
         return $child->pointTransactions()->create([
+            'family_id' => $child->family_id,
             'amount' => $amount,
             'type' => $type,
             'reference_type' => $referenceType,

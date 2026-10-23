@@ -12,11 +12,14 @@ class EnsureChildAccess
 {
     public function handle(Request $request, Closure $next): Response
     {
+        $child = $this->childFromRoute($request);
+
+        abort_unless($child && (session()->get('family_id') === null || session()->get('family_id') === $child->family_id), 404);
+
         if ($request->user()?->isParent()) {
+            abort_unless($child?->isChild() && $child->is_active && $request->user()->isInFamily($child), 404);
             return $next($request);
         }
-
-        $child = $this->childFromRoute($request);
 
         abort_unless($child?->isChild() && $child->is_active, 404);
         abort_unless($request->session()->get($this->sessionKey($child)), 403);

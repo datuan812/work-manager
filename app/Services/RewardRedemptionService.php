@@ -33,6 +33,7 @@ class RewardRedemptionService
             }
 
             return RewardRedemption::create([
+                'family_id' => $lockedChild->family_id,
                 'user_id' => $lockedChild->id,
                 'reward_id' => $lockedReward->id,
                 'points_spent' => $lockedReward->required_points,

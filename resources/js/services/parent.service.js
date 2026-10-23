@@ -25,6 +25,10 @@ function childFormData(payload, method = null) {
 }
 
 export const parentService = {
+    accessPinStatus: () => api('/api/parent/access-pin'),
+    setAccessPin: (pin) => api('/api/parent/access-pin', { method: 'PUT', body: { pin } }),
+    toggleAccessPin: (enabled) => api('/api/parent/access-pin/toggle', { method: 'PATCH', body: { enabled } }),
+    verifyAccessPin: (pin) => api('/api/parent/access-pin/verify', { method: 'POST', body: { pin } }),
     dashboard: () => api('/api/parent'),
     statistics: () => api('/api/parent/statistics'),
     children: () => api('/api/parent/children'),

@@ -21,6 +21,7 @@ class ChildManagementController extends Controller
         $data = $this->storeAvatar($request, $data);
         $data = $this->prepareChildPin($data);
         $data['role'] = UserRole::CHILD;
+        $data['family_id'] = $request->user()->family_id;
         $data['email'] = null;
         $data['password'] = null;
 

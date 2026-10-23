@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
-import { BarChart3, CalendarCheck, ChartNoAxesColumnIncreasing, ChevronRight, Gift, History, LayoutDashboard, LogOut, Medal, MonitorSmartphone, NotebookTabs, PanelLeftClose, PanelLeftOpen, Users } from 'lucide-vue-next'
+import { BarChart3, CalendarCheck, ChartNoAxesColumnIncreasing, ChevronRight, Gift, History, LayoutDashboard, LockKeyhole, LogOut, Medal, MonitorSmartphone, NotebookTabs, PanelLeftClose, PanelLeftOpen, Users } from 'lucide-vue-next'
 import { useAuthStore } from '../stores/auth.store'
 import { useParentStore } from '../stores/parent.store'
 
@@ -10,7 +10,7 @@ const router = useRouter()
 const auth = useAuthStore()
 const parent = useParentStore()
 const sidebarCollapsed = ref(false)
-const links = [
+const parentLinks = [
     { to: '/parent', label: 'Tổng quan', icon: LayoutDashboard },
     { to: '/parent/statistics', label: 'Thống kê', icon: ChartNoAxesColumnIncreasing },
     { to: '/parent/children', label: 'Hồ sơ bé', icon: Users },
@@ -20,13 +20,19 @@ const links = [
     { to: '/parent/achievements', label: 'Thành tựu', icon: Medal },
     { to: '/parent/task-history', label: 'Lịch sử việc làm', icon: History },
     { to: '/parent/reward-history', label: 'Lịch sử đổi thưởng', icon: History },
+    { to: '/parent/access-pin', label: 'Mã khu vực phụ huynh', icon: LockKeyhole },
 ]
-const currentLink = computed(() => [...links].sort((a, b) => b.to.length - a.to.length).find((link) => route.path === link.to || route.path.startsWith(`${link.to}/`)) ?? links[0])
+const links = computed(() => auth.user?.role === 'admin'
+    ? [{ to: '/admin', label: 'Quản lý người dùng', icon: Users }]
+    : parentLinks)
+const homeTarget = computed(() => auth.user?.role === 'admin' ? '/admin' : '/parent')
+const consoleTitle = computed(() => auth.user?.role === 'admin' ? 'Admin Console' : 'Parent Console')
+const currentLink = computed(() => [...links.value].sort((a, b) => b.to.length - a.to.length).find((link) => route.path === link.to || route.path.startsWith(`${link.to}/`)) ?? links.value[0])
 const userInitial = computed(() => (auth.user?.name || 'A').trim().slice(0, 1).toUpperCase())
 
 async function logout() {
     await auth.logout()
-    router.push('/parent/login')
+    router.replace('/')
 }
 </script>
 
@@ -41,17 +47,21 @@ async function logout() {
 
         <aside class="border-b border-slate-200 bg-slate-950 px-4 py-4 text-white transition-all lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:border-b-0 lg:border-r lg:border-slate-900 lg:px-5 lg:py-5">
             <div class="flex min-h-12 items-center gap-3">
-                <RouterLink to="/parent" class="flex min-w-0 flex-1 items-center gap-3">
-                <span class="grid h-11 w-11 place-items-center rounded-xl bg-sky-500 text-lg font-bold text-white shadow-sm shadow-sky-950/40">K</span>
+                <RouterLink :to="homeTarget" class="flex min-w-0 flex-1 items-center gap-3">
+                <img
+                    src="/public/images/kidtask-favicon.png"
+                    alt="KidTask"
+                    class="h-11 w-11 rounded-xl object-cover shadow-sm shadow-sky-950/40"
+                />
                 <span class="min-w-0" :class="sidebarCollapsed ? 'lg:hidden' : ''">
                     <span class="block text-lg font-bold leading-5">KidTask</span>
-                    <span class="mt-1 block text-xs font-bold uppercase tracking-wide text-slate-400">Parent Console</span>
+                    <span class="mt-1 block text-xs font-bold uppercase tracking-wide text-slate-400">{{ consoleTitle }}</span>
                 </span>
                 </RouterLink>
 
             </div>
 
-            <nav class="mt-5 flex gap-1 overflow-x-auto pb-1 lg:mt-8 lg:grid lg:gap-1 lg:overflow-y-auto hide-scrollbar lg:pb-0">
+            <nav class="mt-5 flex gap-1 overflow-x-auto pb-1 lg:mt-8 lg:grid lg:gap-1 lg:overflow-y-auto  lg:pb-0">
                 <RouterLink
                     v-for="{ to, label, icon } in links"
                     :key="to"
@@ -83,7 +93,9 @@ async function logout() {
                         <span class="grid h-10 w-10 place-items-center rounded-xl bg-white text-sm font-bold text-slate-950">{{ userInitial }}</span>
                         <div class="min-w-0" :class="sidebarCollapsed ? 'lg:hidden' : ''">
                             <p class="truncate text-sm font-bold">{{ auth.user?.name || 'KidTask Admin' }}</p>
-                            <p class="text-xs font-bold text-slate-400">Parent account</p>
+                            <p class="text-xs font-bold text-slate-400">
+                                {{ auth.user?.role === 'admin' ? 'Admin account' : 'Parent account' }}
+                            </p>
                         </div>
                     </div>
                     <button class="mt-3 flex min-h-10 w-full items-center justify-center gap-2 rounded-xl border border-white/10 text-sm font-bold text-slate-300 transition hover:bg-white/10 hover:text-white" :title="sidebarCollapsed ? 'Đăng xuất' : ''" @click="logout">
@@ -99,13 +111,13 @@ async function logout() {
                 <div class="min-w-0">
                     <div class="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-slate-500">
                         <BarChart3 class="h-4 w-4 text-sky-600" />
-                        Parent Dashboard
+                        {{ auth.user?.role === 'admin' ? 'Admin Dashboard' : 'Parent Dashboard' }}
                     </div>
                     <p class="mt-0.5 truncate text-sm font-bold text-slate-950 sm:text-base">{{ currentLink.label }}</p>
                 </div>
 
                 <div class="flex items-center gap-2">
-                    <RouterLink to="/" class="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl px-3 text-sm font-bold text-white ring-1 ring-slate-200 transition bg-sky-600 hover:bg-sky-700 ">
+                    <RouterLink v-if="auth.user?.role !== 'admin'" to="/family" class="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl px-3 text-sm font-bold text-white ring-1 ring-slate-200 transition bg-sky-600 hover:bg-sky-700 ">
                         <MonitorSmartphone class="h-4 w-4" />
                         <span class="hidden sm:inline">Chế độ Trẻ em</span>
                     </RouterLink>

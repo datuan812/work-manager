@@ -25,6 +25,7 @@ class DailyTaskGenerator
                 $task->dailyTasks()->firstOrCreate(
                     ['date' => $date->toDateString()],
                     [
+                        'family_id' => $child->family_id,
                         'user_id' => $task->user_id,
                         'reminder_time' => $task->schedule->time_of_day,
                         'status' => DailyTaskStatus::PENDING,
