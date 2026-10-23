@@ -112,12 +112,17 @@ const submitDisabled = computed(
         !dashboardReady.value ||
         !dayStatus.value.can_submit ||
         displayedTasks.value.length === 0 ||
+        displayedProgress.value.completed === 0 ||
         childStore.loadingStates.taskDraft ||
         childStore.loadingStates.submitDailyTasks,
 );
 const submitHint = computed(() => {
     if (displayedTasks.value.length === 0) {
         return "Chưa có nhiệm vụ nào được giao cho ngày này.";
+    }
+
+    if (displayedProgress.value.completed === 0) {
+        return "Con cần hoàn thành ít nhất một nhiệm vụ trong ngày trước khi chốt.";
     }
 
     if (selectedDay.value === "tomorrow") {

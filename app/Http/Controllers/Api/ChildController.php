@@ -108,6 +108,12 @@ class ChildController extends Controller
             ->intersect($allowedIds)
             ->values();
 
+        if ($completedTaskIds->isEmpty()) {
+            throw ValidationException::withMessages([
+                'completed_task_ids' => 'Con cần hoàn thành ít nhất một nhiệm vụ trong ngày trước khi chốt.',
+            ]);
+        }
+
         $result = DB::transaction(function () use ($dailyTasks, $completedTaskIds, $action, $user, $date): array {
             $pointsAwarded = 0;
 
