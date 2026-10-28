@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Models\DailyTask;
 use App\Models\DailyTaskSubmission;
 use App\Models\Task;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -57,6 +58,7 @@ class TaskCalendarController extends Controller
                 'integer',
                 'distinct',
                 Rule::exists('tasks', 'id')
+                    ->where('family_id', $request->user()->family_id)
                     ->whereNull('user_id')
                     ->where('is_active', true),
             ],
@@ -94,6 +96,7 @@ class TaskCalendarController extends Controller
         }
 
         $tasks = Task::query()
+            ->where('family_id', $request->user()->family_id)
             ->where('is_active', true)
             ->whereNull('user_id')
             ->whereIn('id', $data['task_ids'])

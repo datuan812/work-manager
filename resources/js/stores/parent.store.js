@@ -11,7 +11,6 @@ export const useParentStore = defineStore('parent', {
         taskHistory: { items: [], summary: { total: 0, completed: 0, pending: 0, incomplete: 0 }, filters: {}, meta: { current_page: 1, last_page: 1, per_page: 25, total: 0, from: 0, to: 0 } },
         rewardHistory: { items: [], summary: { total: 0, points_spent: 0, children: 0 }, filters: {}, meta: { current_page: 1, last_page: 1, per_page: 25, total: 0, from: 0, to: 0 } },
         rewards: [],
-        achievements: [],
         statistics: null,
         loading: false,
         loadingStates: {},
@@ -147,25 +146,6 @@ export const useParentStore = defineStore('parent', {
             return this.withLoading('deleteReward', async () => {
                 await parentService.deleteReward(id)
                 await this.loadRewards()
-            })
-        },
-        async loadAchievements() {
-            return this.withLoading('achievements', async () => {
-                this.achievements = await parentService.achievements()
-            })
-        },
-        async saveAchievement(payload) {
-            return this.withLoading('saveAchievement', async () => {
-                payload.id
-                    ? await parentService.updateAchievement(payload.id, payload)
-                    : await parentService.createAchievement(payload)
-                await this.loadAchievements()
-            })
-        },
-        async deleteAchievement(id) {
-            return this.withLoading('deleteAchievement', async () => {
-                await parentService.deleteAchievement(id)
-                await this.loadAchievements()
             })
         },
         async loadStatistics() {

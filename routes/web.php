@@ -4,7 +4,6 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\ChildController;
 use App\Http\Controllers\Api\DailyTaskController;
-use App\Http\Controllers\Api\Parent\AchievementController;
 use App\Http\Controllers\Api\Parent\ChildManagementController;
 use App\Http\Controllers\Api\Parent\ParentController;
 use App\Http\Controllers\Api\Parent\RewardHistoryController;
@@ -26,7 +25,6 @@ Route::prefix('api')->group(function () {
         Route::patch('children/{user}/daily-tasks/draft', [ChildController::class, 'saveDailyTaskDraft']);
         Route::post('children/{user}/daily-tasks/submit', [ChildController::class, 'submitDailyTasks']);
         Route::get('children/{user}/progress', [ChildController::class, 'progress']);
-        Route::get('children/{user}/achievements', [ChildController::class, 'achievements']);
         Route::get('children/{user}/rewards', [ChildController::class, 'rewards']);
         Route::get('children/{user}/reward-history', [ChildController::class, 'rewardHistory']);
         Route::post('children/{user}/rewards/{reward}/redeem', [ChildController::class, 'redeem']);
@@ -47,6 +45,10 @@ Route::prefix('api')->group(function () {
         Route::post('families', [AdminController::class, 'storeFamily']);
         Route::patch('families/{family}', [AdminController::class, 'updateFamily']);
         Route::delete('families/{family}', [AdminController::class, 'destroyFamily']);
+        Route::get('categories', [AdminController::class, 'categories']);
+        Route::post('categories', [AdminController::class, 'storeCategory']);
+        Route::patch('categories/{category}', [AdminController::class, 'updateCategory']);
+        Route::delete('categories/{category}', [AdminController::class, 'destroyCategory']);
     });
 
     Route::middleware(['auth', 'parent'])->prefix('parent')->group(function () {
@@ -67,7 +69,6 @@ Route::prefix('api')->group(function () {
         Route::patch('reward-history/{redemption}/reject', [RewardHistoryController::class, 'reject']);
         Route::apiResource('tasks', TaskManagementController::class)->except(['show']);
         Route::apiResource('rewards', RewardManagementController::class)->except(['show']);
-        Route::apiResource('achievements', AchievementController::class)->except(['show']);
         });
     });
 });

@@ -6,7 +6,6 @@ use App\Actions\CompleteDailyTaskAction;
 use App\Enums\DailyTaskStatus;
 use App\Enums\RepeatType;
 use App\Enums\UserRole;
-use App\Models\Achievement;
 use App\Models\DailyTask;
 use App\Models\Reward;
 use App\Models\Task;
@@ -145,7 +144,6 @@ class KidTaskFeatureTest extends TestCase
     public function test_complete_task_awards_points_once_and_uncomplete_reverses_once(): void
     {
         [$child] = $this->scheduledTask();
-        Achievement::firstOrCreate(['code' => 'first_step'], ['title' => 'First Step']);
         app(DailyTaskGenerator::class)->generateForChild($child, today());
         $dailyTask = $child->dailyTasks()->first();
         $action = app(CompleteDailyTaskAction::class);
@@ -156,7 +154,6 @@ class KidTaskFeatureTest extends TestCase
         $this->assertSame(10, $first['points_awarded']);
         $this->assertSame(0, $second['points_awarded']);
         $this->assertSame(10, (int) $child->pointTransactions()->sum('amount'));
-        $this->assertDatabaseHas('user_achievements', ['user_id' => $child->id]);
 
         $action->uncomplete($dailyTask);
         $action->uncomplete($dailyTask);

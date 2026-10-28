@@ -6,7 +6,6 @@ use App\Enums\DailyTaskStatus;
 use App\Enums\PointTransactionType;
 use App\Models\DailyTask;
 use App\Models\DailyTaskSubmission;
-use App\Services\AchievementService;
 use App\Services\PointService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -15,7 +14,6 @@ class CompleteDailyTaskAction
 {
     public function __construct(
         private readonly PointService $points,
-        private readonly AchievementService $achievements,
     ) {}
 
     public function complete(DailyTask $dailyTask): array
@@ -26,7 +24,7 @@ class CompleteDailyTaskAction
             $this->ensureActionable($dailyTask);
 
             if ($dailyTask->status === DailyTaskStatus::COMPLETED) {
-                return ['daily_task' => $dailyTask, 'points_awarded' => 0, 'achievements' => []];
+                return ['daily_task' => $dailyTask, 'points_awarded' => 0];
             }
 
             $dailyTask->update([
@@ -46,7 +44,6 @@ class CompleteDailyTaskAction
             return [
                 'daily_task' => $dailyTask->refresh()->load('task.category'),
                 'points_awarded' => $dailyTask->task->points,
-                'achievements' => $this->achievements->evaluate($dailyTask->user),
             ];
         });
     }
@@ -59,7 +56,7 @@ class CompleteDailyTaskAction
             $this->ensureActionable($dailyTask);
 
             if ($dailyTask->status !== DailyTaskStatus::COMPLETED) {
-                return ['daily_task' => $dailyTask, 'points_awarded' => 0, 'achievements' => []];
+                return ['daily_task' => $dailyTask, 'points_awarded' => 0];
             }
 
             $dailyTask->update([
@@ -76,7 +73,7 @@ class CompleteDailyTaskAction
                 "Unchecked {$dailyTask->task->title}",
             );
 
-            return ['daily_task' => $dailyTask->refresh()->load('task.category'), 'points_awarded' => -$dailyTask->task->points, 'achievements' => []];
+            return ['daily_task' => $dailyTask->refresh()->load('task.category'), 'points_awarded' => -$dailyTask->task->points];
         });
     }
 

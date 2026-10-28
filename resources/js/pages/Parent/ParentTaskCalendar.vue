@@ -17,6 +17,10 @@ const activeChildId = ref(null);
 const taskIdsByChild = ref({});
 const modalDate = ref(null);
 const reminderTime = ref("");
+const reminderTimesByChild = ref({});
+const quickAssignMode = ref(false);
+const quickSelectedChildIds = ref([]);
+const quickReminderTime = ref("");
 const currentMonth = ref(monthDateFromKey(vietnamTodayKey()));
 const quickRange = ref({
     start: monthStartKeyFromDate(currentMonth.value),
@@ -426,6 +430,13 @@ function refreshSelectedChildren() {
 }
 
 function toggleTask(taskId) {
+    if (quickAssignMode.value) {
+        selectedTaskIds.value = selectedTaskIds.value.includes(taskId)
+            ? selectedTaskIds.value.filter((id) => id !== taskId)
+            : [...selectedTaskIds.value, taskId];
+        return;
+    }
+
     if (!activeChildId.value) return;
 
     selectedTaskIds.value = selectedTaskIds.value.includes(taskId)
@@ -439,16 +450,40 @@ function toggleTask(taskId) {
     refreshSelectedChildren();
 }
 
+function toggleQuickMode() {
+    quickAssignMode.value = !quickAssignMode.value;
+    quickSelectedChildIds.value = [];
+    quickReminderTime.value = quickAssignMode.value ? "" : "";
+
+    if (quickAssignMode.value) {
+        selectedTaskIds.value = [];
+    } else {
+        selectedTaskIds.value = taskIdsByChild.value[activeChildId.value] ?? [];
+        reminderTime.value = reminderTimesByChild.value[activeChildId.value] ?? "";
+    }
+}
+
+function toggleQuickChild(childId) {
+    quickSelectedChildIds.value = quickSelectedChildIds.value.includes(childId)
+        ? quickSelectedChildIds.value.filter((id) => id !== childId)
+        : [...quickSelectedChildIds.value, childId];
+}
+
 function toggleChild(childId) {
     if (activeChildId.value) {
         taskIdsByChild.value = {
             ...taskIdsByChild.value,
             [activeChildId.value]: selectedTaskIds.value,
         };
+        reminderTimesByChild.value = {
+            ...reminderTimesByChild.value,
+            [activeChildId.value]: reminderTime.value,
+        };
     }
 
     activeChildId.value = childId;
     selectedTaskIds.value = taskIdsByChild.value[childId] ?? [];
+    reminderTime.value = reminderTimesByChild.value[childId] ?? "";
     refreshSelectedChildren();
 }
 
@@ -461,6 +496,14 @@ function selectAllTasks() {
         };
         refreshSelectedChildren();
     }
+}
+
+function selectAllQuickChildren() {
+    quickSelectedChildIds.value = parent.children.map((child) => child.id);
+}
+
+function clearQuickChildren() {
+    quickSelectedChildIds.value = [];
 }
 
 function clearTaskSelection() {
@@ -500,9 +543,7 @@ function openModal(key = null) {
     );
 
     const nextTaskIdsByChild = {};
-    const assignmentReminderTimes = assignments
-        .map((assignment) => assignment.reminder_time?.slice?.(0, 5) ?? "")
-        .filter(Boolean);
+    const reminderValuesByChild = {};
 
     assignments.forEach((assignment) => {
         const templateId = templateMap.get(
@@ -511,9 +552,14 @@ function openModal(key = null) {
 
         if (templateId) {
             const childId = assignment.user_id;
+            const reminderValue = assignment.reminder_time?.slice?.(0, 5) ?? "";
             nextTaskIdsByChild[childId] = [
                 ...(nextTaskIdsByChild[childId] ?? []),
                 templateId,
+            ];
+            reminderValuesByChild[childId] = [
+                ...(reminderValuesByChild[childId] ?? []),
+                reminderValue,
             ];
         }
     });
@@ -522,7 +568,16 @@ function openModal(key = null) {
     selectedChildIds.value = Object.keys(nextTaskIdsByChild).map(Number);
     activeChildId.value = selectedChildIds.value[0] ?? parent.children[0]?.id ?? null;
     selectedTaskIds.value = taskIdsByChild.value[activeChildId.value] ?? [];
-    reminderTime.value = [...new Set(assignmentReminderTimes)].length === 1 ? assignmentReminderTimes[0] : "";
+    reminderTimesByChild.value = Object.fromEntries(
+        Object.entries(reminderValuesByChild).map(([childId, values]) => {
+            const uniqueValues = [...new Set(values)];
+            return [childId, uniqueValues.length === 1 ? uniqueValues[0] : ""];
+        }),
+    );
+    reminderTime.value = reminderTimesByChild.value[activeChildId.value] ?? "";
+    quickAssignMode.value = false;
+    quickSelectedChildIds.value = [];
+    quickReminderTime.value = "";
 }
 
 function closeModal() {
@@ -532,6 +587,10 @@ function closeModal() {
     activeChildId.value = null;
     taskIdsByChild.value = {};
     reminderTime.value = "";
+    reminderTimesByChild.value = {};
+    quickAssignMode.value = false;
+    quickSelectedChildIds.value = [];
+    quickReminderTime.value = "";
 }
 
 async function loadCalendar() {
@@ -545,6 +604,42 @@ async function assignSelectedTasks() {
 
     if (modalHasLockedDates.value) {
         toast.show("Không thể thay đổi nhiệm vụ trong ngày đã đến hạn hoặc đã qua.");
+        return;
+    }
+
+    if (activeChildId.value) {
+        reminderTimesByChild.value = {
+            ...reminderTimesByChild.value,
+            [activeChildId.value]: reminderTime.value,
+        };
+    }
+
+    if (quickAssignMode.value) {
+        if (!quickSelectedChildIds.value.length || !selectedTaskIds.value.length) {
+            toast.show("Vui lòng chọn ít nhất một bé và một nhiệm vụ.");
+            return;
+        }
+
+        const assignPayloads = quickSelectedChildIds.value.map((childId) => ({
+            user_ids: [Number(childId)],
+            task_ids: selectedTaskIds.value,
+            dates: modalDates.value,
+            reminder_time: quickReminderTime.value || null,
+        }));
+
+        try {
+            await parent.saveTaskAssignmentChanges(
+                { deleteIds: [], assignPayloads },
+                calendarParams.value,
+            );
+            toast.show("Đã giao nhanh nhiệm vụ thành công.");
+            selectedDates.value = [];
+            quickSelectApplied.value = false;
+            closeModal();
+        } catch (error) {
+            toast.show(error.message, "error");
+        }
+
         return;
     }
 
@@ -575,7 +670,7 @@ async function assignSelectedTasks() {
             user_ids: [Number(childId)],
             task_ids: taskIds,
             dates: modalDates.value,
-            reminder_time: reminderTime.value || null,
+            reminder_time: reminderTimesByChild.value[childId] || null,
         }));
 
     try {
@@ -947,12 +1042,20 @@ onMounted(async () => {
             :selected-child-ids="selectedChildIds"
             :active-child-id="activeChildId"
             :reminder-time="reminderTime"
+            :quick-assign-mode="quickAssignMode"
+            :quick-selected-child-ids="quickSelectedChildIds"
+            :quick-reminder-time="quickReminderTime"
             @close="closeModal"
             @toggle-task="toggleTask"
             @toggle-child="toggleChild"
             @select-all-tasks="selectAllTasks"
             @clear-tasks="clearTaskSelection"
             @update:reminder-time="reminderTime = $event"
+            @toggle-quick-mode="toggleQuickMode"
+            @toggle-quick-child="toggleQuickChild"
+            @select-all-quick-children="selectAllQuickChildren"
+            @clear-quick-children="clearQuickChildren"
+            @update:quick-reminder-time="quickReminderTime = $event"
             @save="assignSelectedTasks"
         />
 

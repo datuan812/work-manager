@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
-import { BarChart3, CalendarCheck, ChartNoAxesColumnIncreasing, ChevronRight, Gift, History, LayoutDashboard, LockKeyhole, LogOut, Medal, MonitorSmartphone, NotebookTabs, PanelLeftClose, PanelLeftOpen, Users } from 'lucide-vue-next'
+import { BarChart3, CalendarCheck, ChartNoAxesColumnIncreasing, ChevronRight, Gift, History, LayoutDashboard, LockKeyhole, LogOut, MonitorSmartphone, NotebookTabs, PanelLeftClose, PanelLeftOpen, Tags, Users } from 'lucide-vue-next'
 import { useAuthStore } from '../stores/auth.store'
 import { useParentStore } from '../stores/parent.store'
 
@@ -17,13 +17,12 @@ const parentLinks = [
     { to: '/parent/tasks', label: 'Nhiệm vụ', icon: NotebookTabs },
     { to: '/parent/task-calendar', label: 'Giao nhiệm vụ', icon: CalendarCheck },
     { to: '/parent/rewards', label: 'Phần thưởng', icon: Gift },
-    { to: '/parent/achievements', label: 'Thành tựu', icon: Medal },
     { to: '/parent/task-history', label: 'Lịch sử việc làm', icon: History },
     { to: '/parent/reward-history', label: 'Lịch sử đổi thưởng', icon: History },
     { to: '/parent/access-pin', label: 'Mã khu vực phụ huynh', icon: LockKeyhole },
 ]
 const links = computed(() => auth.user?.role === 'admin'
-    ? [{ to: '/admin', label: 'Quản lý người dùng', icon: Users }]
+    ? [{ to: '/admin', label: 'Quản lý người dùng', icon: Users }, { to: '/admin/categories', label: 'Quản lý danh mục', icon: Tags }]
     : parentLinks)
 const homeTarget = computed(() => auth.user?.role === 'admin' ? '/admin' : '/parent')
 const consoleTitle = computed(() => auth.user?.role === 'admin' ? 'Admin Console' : 'Parent Console')

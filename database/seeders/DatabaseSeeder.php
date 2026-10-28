@@ -3,11 +3,9 @@
 namespace Database\Seeders;
 
 use App\Enums\UserRole;
-use App\Models\Achievement;
 use App\Models\Family;
 use App\Models\Reward;
 use App\Models\Task;
-use App\Models\TaskCategory;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -37,18 +35,6 @@ class DatabaseSeeder extends Seeder
         User::updateOrCreate(['email' => 'parent@gmail.com'], ['name' => 'Phụ huynh mẫu', 'password' => Hash::make('12345678'), 'role' => UserRole::PARENT, 'family_id' => $family->id, 'is_active' => true]);
 
         collect([
-            ['name' => 'Học tập', 'icon' => '📚', 'color' => '#2563eb'],
-            ['name' => 'Vệ sinh', 'icon' => '🪥', 'color' => '#0f766e'],
-            ['name' => 'Việc nhà', 'icon' => '🧹', 'color' => '#b45309'],
-            ['name' => 'Sức khỏe', 'icon' => '❤️', 'color' => '#dc2626'],
-            ['name' => 'Thói quen', 'icon' => '🌱', 'color' => '#16a34a'],
-            ['name' => 'Khác', 'icon' => '⭐', 'color' => '#7c3aed'],
-        ])->each(fn (array $category, int $index) => TaskCategory::updateOrCreate(
-            ['name' => $category['name']],
-            [...$category, 'family_id' => $family->id, 'sort_order' => $index + 1],
-        ));
-
-        collect([
             ['name' => 'Tuấn', 'date_of_birth' => '2017-04-12'],
             ['name' => 'Linh', 'date_of_birth' => '2019-09-20'],
             ['name' => 'Tina', 'date_of_birth' => '2021-01-08'],
@@ -63,17 +49,6 @@ class DatabaseSeeder extends Seeder
                 'is_active' => true,
                 'family_id' => $family->id,
             ],
-        ));
-
-        collect([
-            ['code' => 'first_step', 'title' => 'Bước đầu tiên', 'description' => 'Hoàn thành nhiệm vụ đầu tiên.', 'icon' => '🏆'],
-            ['code' => 'seven_day_streak', 'title' => '7 ngày bền bỉ', 'description' => 'Hoàn thành toàn bộ nhiệm vụ trong 7 ngày liên tiếp.', 'icon' => '🔥'],
-            ['code' => 'task_master', 'title' => 'Cao thủ nhiệm vụ', 'description' => 'Hoàn thành 100 nhiệm vụ.', 'icon' => '⭐'],
-            ['code' => 'perfect_day', 'title' => 'Ngày hoàn hảo', 'description' => 'Hoàn thành toàn bộ nhiệm vụ trong một ngày.', 'icon' => '💯'],
-            ['code' => 'early_bird', 'title' => 'Chủ động mỗi ngày', 'description' => 'Hoàn thành 10 nhiệm vụ.', 'icon' => '🌟'],
-        ])->each(fn (array $achievement) => Achievement::updateOrCreate(
-            ['code' => $achievement['code']],
-            [...$achievement, 'criteria' => [], 'is_active' => true, 'family_id' => $family->id],
         ));
 
         collect([
@@ -98,13 +73,11 @@ class DatabaseSeeder extends Seeder
             ['title' => 'Đi ngủ đúng giờ', 'category' => 'Thói quen', 'icon' => '🌙', 'points' => 15],
             ['title' => 'Nói lời cảm ơn', 'category' => 'Thói quen', 'icon' => '💬', 'points' => 5],
         ])->each(function (array $task) use ($family): void {
-            $category = TaskCategory::query()->where('name', $task['category'])->first();
-
             Task::updateOrCreate(
                 ['user_id' => null, 'title' => $task['title']],
                 [
                     'family_id' => $family->id,
-                    'category_id' => $category?->id,
+                    'category_id' => null,
                     'description' => 'Nhiệm vụ mẫu có thể giao theo lịch.',
                     'icon' => $task['icon'],
                     'points' => $task['points'],

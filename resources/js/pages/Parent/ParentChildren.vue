@@ -22,7 +22,7 @@ const datePicker = ref(null)
 const showPin = ref(false)
 const form = reactive({ id: null, name: '', avatar: '', avatar_file: null, avatar_preview: '', date_of_birth: '', access_pin: '', is_active: true })
 const dateOfBirthInput = ref('')
-const errors = reactive({ name: '', date_of_birth: '', access_pin: '', avatar_file: '' })
+const errors = reactive({ name: '', access_pin: '', avatar_file: '', date_of_birth: '' })
 const previewAvatar = computed(() => form.avatar_preview || form.avatar)
 const parentFamilyCode = computed(() => auth.user?.family_code || `Family #${auth.user?.family_id || '—'}`)
 
@@ -47,6 +47,12 @@ function normalizeDate(value) {
     return ''
 }
 
+function isValidDateParts(day, month, year) {
+    const date = new Date(year, month - 1, day)
+
+    return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day
+}
+
 function formatDateInput(value) {
     if (!value) return ''
 
@@ -56,14 +62,8 @@ function formatDateInput(value) {
     return `${day.padStart(2, '0')}/${month.padStart(2, '0')}/${year}`
 }
 
-function isValidDateParts(day, month, year) {
-    const date = new Date(year, month - 1, day)
-
-    return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day
-}
-
 function clearErrors() {
-    Object.assign(errors, { name: '', date_of_birth: '', access_pin: '', avatar_file: '' })
+    Object.assign(errors, { name: '', access_pin: '', avatar_file: '', date_of_birth: '' })
 }
 
 function validateForm() {
@@ -73,22 +73,16 @@ function validateForm() {
         errors.name = 'Vui lòng nhập tên bé.'
     }
 
+    if (dateOfBirthInput.value.trim() && !form.date_of_birth) {
+        errors.date_of_birth = 'Vui lòng nhập ngày sinh theo dạng dd/mm/yyyy.'
+    } else if (form.date_of_birth && new Date(`${form.date_of_birth}T00:00:00`) > new Date()) {
+        errors.date_of_birth = 'Ngày sinh không được lớn hơn hôm nay.'
+    }
+
     if (!form.id && !/^\d{4,6}$/.test(form.access_pin)) {
         errors.access_pin = 'Mã PIN cần có 4-6 số.'
     } else if (form.id && form.access_pin && !/^\d{4,6}$/.test(form.access_pin)) {
         errors.access_pin = 'Mã PIN mới cần có 4-6 số.'
-    }
-
-    const normalizedDate = normalizeDate(dateOfBirthInput.value)
-    if (!dateOfBirthInput.value.trim()) {
-        errors.date_of_birth = 'Vui lòng chọn hoặc nhập ngày sinh.'
-    } else if (!normalizedDate) {
-        errors.date_of_birth = 'Ngày sinh cần đúng định dạng dd/mm/yyyy.'
-    } else if (new Date(`${normalizedDate}T00:00:00`) > new Date()) {
-        errors.date_of_birth = 'Ngày sinh không được lớn hơn hôm nay.'
-    } else {
-        form.date_of_birth = normalizedDate
-        dateOfBirthInput.value = formatDateInput(normalizedDate)
     }
 
     if (form.avatar_file && !form.avatar_file.type.startsWith('image/')) {
@@ -137,14 +131,17 @@ function chooseDateOfBirth(event) {
     errors.date_of_birth = ''
 }
 function syncDateOfBirth() {
-    const normalizedDate = normalizeDate(dateOfBirthInput.value)
-    if (!normalizedDate) return
-
+    const inputValue = dateOfBirthInput.value.trim()
+    const normalizedDate = normalizeDate(inputValue)
     form.date_of_birth = normalizedDate
-    dateOfBirthInput.value = formatDateInput(normalizedDate)
-    errors.date_of_birth = ''
+    dateOfBirthInput.value = normalizedDate ? formatDateInput(normalizedDate) : inputValue
+    errors.date_of_birth = !normalizedDate && inputValue
+        ? 'Vui lòng nhập ngày sinh theo dạng dd/mm/yyyy.'
+        : ''
 }
 async function save() {
+    syncDateOfBirth()
+
     if (!validateForm()) {
         toast.show('Vui lòng kiểm tra lại thông tin hồ sơ bé.', 'error')
         return
@@ -240,10 +237,9 @@ onMounted(() => parent.loadChildren())
                                 inputmode="numeric"
                                 placeholder="dd/mm/yyyy"
                                 :aria-invalid="!!errors.date_of_birth"
-                                class="min-h-11 w-full rounded-xl border bg-white px-3 pr-12 text-sm font-semibold text-slate-900 outline-none transition placeholder:text-slate-400 focus:ring-3"
-                                :class="errors.date_of_birth ? 'border-red-300 focus:border-red-500 focus:ring-red-100' : 'border-slate-200 focus:border-sky-500 focus:ring-sky-100'"
+                                class="min-h-11 w-full rounded-xl border bg-white px-3 pr-12 text-sm font-semibold text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:ring-3 focus:ring-sky-100"
+                                :class="errors.date_of_birth ? 'border-red-300 focus:border-red-500 focus:ring-red-100' : 'border-slate-200'"
                                 @blur="syncDateOfBirth"
-                                @input="errors.date_of_birth = ''"
                             />
                             <input ref="datePicker" :value="form.date_of_birth" type="date" class="pointer-events-none absolute inset-0 opacity-0" tabindex="-1" @input="chooseDateOfBirth" />
                             <button type="button" title="Chọn ngày sinh" class="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-sky-700" @click="openDatePicker">

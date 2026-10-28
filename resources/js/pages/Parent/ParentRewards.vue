@@ -13,10 +13,10 @@ const parent = useParentStore()
 const toast = useToastStore()
 const confirmDelete = reactive({ show: false, id: null });
 const form = reactive({ id: null, title: '', description: '', icon: '', required_points: 0, is_active: true })
-const errors = reactive({ title: '', icon: '', required_points: '' })
+const errors = reactive({ title: '', required_points: '' })
 
 function clearErrors() {
-    Object.assign(errors, { title: '', icon: '', required_points: '' })
+    Object.assign(errors, { title: '', required_points: '' })
 }
 
 function validateForm() {
@@ -24,10 +24,6 @@ function validateForm() {
 
     if (!form.title.trim()) {
         errors.title = 'Vui lòng nhập tên phần thưởng.'
-    }
-
-    if (!String(form.icon).trim()) {
-        errors.icon = 'Vui lòng nhập icon.'
     }
 
     const points = Number(form.required_points)
@@ -91,11 +87,13 @@ onMounted(() => parent.loadRewards())
                     </div>
                     <BaseInput v-model="form.title" label="Tên phần thưởng" :error="errors.title" @update:modelValue="errors.title = ''" />
                     <div class="mt-4 grid grid-cols-2 gap-3">
-                        <BaseInput v-model="form.icon" label="Icon" :error="errors.icon" @update:modelValue="errors.icon = ''" />
+                        <BaseInput v-model="form.icon" label="Icon (tùy chọn)" />
                         <BaseInput v-model="form.required_points" label="Điểm cần thiết" type="number" :error="errors.required_points" @update:modelValue="errors.required_points = ''" />
                     </div>
-                    <BaseInput v-model="form.description" class="mt-4" label="Mô tả" />
-                    <label class="mt-4 flex min-h-11 items-center gap-2 text-sm font-bold"><input v-model="form.is_active" type="checkbox" /> Hiển thị phần thưởng</label>
+                    <div class="mt-4">
+                        <BaseInput v-model="form.description" class="" label="Mô tả" />
+                        <label class=" flex min-h-11 items-center gap-2 text-sm font-bold"><input v-model="form.is_active" type="checkbox" /> Hiển thị phần thưởng</label>
+                    </div>
                     <div class="mt-5 flex gap-2"><BaseButton type="submit">{{ form.id ? 'Cập nhật' : 'Tạo mới' }}</BaseButton><BaseButton variant="secondary" @click="reset">Làm mới</BaseButton></div>
                 </form>
             </div>
@@ -104,7 +102,7 @@ onMounted(() => parent.loadRewards())
             <div v-else class="grid gap-3 md:grid-cols-2">
                 <article v-for="reward in parent.rewards" :key="reward.id" class="admin-card p-5">
                     <div class="flex items-start justify-between gap-4">
-                        <span class="grid h-12 w-12 place-items-center rounded-xl bg-amber-50 text-2xl">{{ reward.icon }}</span>
+                        <span class="grid h-12 w-12 place-items-center rounded-xl bg-amber-50 text-2xl">{{ reward.icon || '🎁' }}</span>
                         <span class="rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700">{{ reward.required_points }} điểm</span>
                     </div>
                     <h2 class="mt-4 font-bold">{{ reward.title }}</h2>

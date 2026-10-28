@@ -84,7 +84,7 @@ const redeemableCount = computed(
                             >
                                 <div class="flex items-center justify-between gap-3">
                                     <span class="font-bold text-slate-900"
-                                        >{{ reward.icon }} {{ reward.title }}</span
+                                        >{{ reward.icon || '🎁' }} {{ reward.title }}</span
                                     >
                                     <span
                                         class="shrink-0 rounded-full px-2.5 py-1 text-xs font-extrabold"

@@ -1,6 +1,7 @@
 <script setup>
-import { computed, onMounted, ref } from "vue";
+import { computed, nextTick, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { BellRing, CalendarCheck, CheckCircle2, Star } from "lucide-vue-next";
 import ChildLayout from "../../layouts/ChildLayout.vue";
 import ChildHeader from "../../components/child/ChildHeader.vue";
 import RewardHistoryModal from "../../components/child/RewardHistoryModal.vue";
@@ -178,9 +179,12 @@ async function load() {
 }
 
 async function selectDay(day) {
+    const scrollTop = window.scrollY;
     selectedDay.value = day;
     await childStore.loadDailyTasks(route.params.id, selectedDate.value);
     syncDraft();
+    await nextTick();
+    requestAnimationFrame(() => window.scrollTo({ top: scrollTop, left: 0, behavior: "auto" }));
 }
 
 async function toggleTask(task) {
@@ -290,261 +294,193 @@ onMounted(load);
             @toggle-rewards="toggleRewards"
         />
 
-        <section
-            class="mx-auto max-w-5xl px-4 pb-6 pt-16 sm:px-6 sm:pt-20 overflow-hidden"
-        >
-            <LoadingState
-                v-if="childStore.loadingStates.dashboard && !dashboardReady"
-                class="mt-6"
-                :title="`Đang tải nhiệm vụ ${selectedOption.label.toLowerCase()}`"
-                message="KidTask đang lấy tiến độ, điểm và danh sách nhiệm vụ."
-                variant="child"
-                :rows="5"
-            />
+        <div class="child-page relative isolate min-h-screen overflow-hidden bg-sky-50 text-[#173b75]">
 
-            <div v-else-if="dashboardReady" class="mt-6">
-                <section class="min-w-0">
-                    <div
-                        class="premium-panel overflow-hidden rounded-[2rem] p-6 sm:p-7"
-                    >
+            <section class="mx-auto max-w-5xl overflow-hidden px-4 pb-10 pt-16 sm:px-6 sm:pt-20">
+                <LoadingState
+                    v-if="childStore.loadingStates.dashboard && !dashboardReady"
+                    class="mt-6"
+                    :title="`Đang tải nhiệm vụ ${selectedOption.label.toLowerCase()}`"
+                    message="KidTask đang lấy tiến độ, điểm và danh sách nhiệm vụ."
+                    variant="child"
+                    :rows="5"
+                />
+
+                <div v-else-if="dashboardReady" class="mt-6">
+                    <section class="min-w-0">
                         <div
-                            class="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-center"
+                            class="overflow-hidden rounded-[28px] border border-white/80 bg-white/95 p-6
+                            shadow-[0_25px_80px_rgba(53,113,180,.22)] backdrop-blur-xl sm:p-8"
                         >
-                            <div>
-                                <p
-                                    class="inline-flex rounded-full bg-sky-100 px-3 py-1 text-xs font-extrabold uppercase text-sky-700"
-                                >
-                                    {{ selectedOption.label }} ·
-                                    {{ selectedDateLabel }}
-                                </p>
-                                <h1
-                                    class="mt-4 text-4xl font-extrabold leading-tight text-slate-900 sm:text-6xl"
-                                >
-                                    {{ dashboard.child.name }}
-                                </h1>
-                                <p
-                                    class="mt-3 max-w-xl text-sm font-medium leading-6 text-slate-600"
-                                >
-                                    Hoàn thành từng nhiệm vụ nhỏ để gom sao và
-                                    giữ chuỗi ngày tốt.
+                            <div class="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-center">
+                                <div>
+                                    <div
+                                        class="inline-flex items-center gap-2 rounded-full border border-sky-100
+                                        bg-white px-4 py-2 text-sm font-extrabold capitalize text-sky-700 shadow-sm"
+                                    >
+                                        <CalendarCheck class="h-4 w-4 text-sky-500" />
+                                        {{ selectedOption.label }} · {{ selectedDateLabel }}
+                                    </div>
+                                    <h1
+                                        class="mt-5 text-4xl font-black leading-[1.15] tracking-tight
+                                        text-[#14458f] sm:text-5xl lg:text-[3.5rem]"
+                                    >
+                                        {{ dashboard.child.name }}
+                                    </h1>
+                                    <p class="mt-3 max-w-xl text-base font-medium leading-7 text-slate-700">
+                                        Hoàn thành từng nhiệm vụ nhỏ để gom sao và giữ chuỗi ngày tốt.
+                                    </p>
+                                </div>
+                                <AvatarPhoto
+                                    :src="dashboard.child.avatar"
+                                    :name="dashboard.child.name"
+                                    size="xl"
+                                />
+                            </div>
+
+                            <div class="mt-6 grid gap-3 sm:grid-cols-3">
+                                <div class="flex items-center gap-4 rounded-2xl bg-sky-50 p-4 ring-1 ring-sky-100">
+                                    <span class="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-emerald-100 text-emerald-600">
+                                        <CheckCircle2 class="h-6 w-6" />
+                                    </span>
+                                    <div>
+                                        <p class="text-xs font-extrabold text-slate-500">Tiến độ</p>
+                                        <p class="mt-0.5 text-2xl font-black text-[#14458f]">
+                                            {{ displayedProgress.completed }}/{{ displayedProgress.total }}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mt-6">
+                                <ProgressBar :value="displayedProgress.percent" />
+                                <p class="mt-3 text-sm font-bold text-slate-600">
+                                    {{ displayedProgress.percent }}% hoàn thành
+                                    {{ selectedOption.label.toLowerCase() }}
                                 </p>
                             </div>
-                            <AvatarPhoto
-                                :src="dashboard.child.avatar"
-                                :name="dashboard.child.name"
-                                size="xl"
-                            />
                         </div>
 
-                        <div class="mt-6 grid gap-3 sm:grid-cols-3">
-                            <div
-                                class="rounded-2xl bg-sky-50 p-4 ring-1 ring-sky-100"
-                            >
-                                <p
-                                    class="text-xs font-bold uppercase text-slate-600"
-                                >
-                                    Tiến độ
-                                </p>
-                                <p
-                                    class="mt-2 text-2xl font-extrabold text-slate-900"
-                                >
-                                    {{ displayedProgress.completed }}/{{
-                                        displayedProgress.total
-                                    }}
-                                </p>
-                            </div>
-                            <!-- <div
-                                class="rounded-2xl bg-amber-50 p-4 ring-1 ring-amber-100"
-                            >
-                                <p
-                                    class="text-xs font-bold uppercase text-slate-600"
-                                >
-                                    Điểm sao
-                                </p>
-                                <p
-                                    class="mt-2 text-2xl font-extrabold text-slate-900"
-                                >
-                                    {{ dashboard.points }} ⭐
-                                </p>
-                            </div>
-                            <div
-                                class="rounded-2xl bg-emerald-50 p-4 ring-1 ring-emerald-100"
-                            >
-                                <p
-                                    class="text-xs font-bold uppercase text-slate-600"
-                                >
-                                    Streak
-                                </p>
-                                <p
-                                    class="mt-2 text-2xl font-extrabold text-slate-900"
-                                >
-                                    🔥 {{ dashboard.streak }}
-                                </p>
-                            </div> -->
-                        </div>
-                        <div class="mt-6">
-                            <ProgressBar :value="displayedProgress.percent" />
-                            <p
-                                class="mt-3 text-sm font-semibold text-slate-600"
-                            >
-                                {{ displayedProgress.percent }}% hoàn thành
-                                {{ selectedOption.label.toLowerCase() }}
-                            </p>
-                        </div>
-                    </div>
-
-                    <div
-                        class="mt-5 grid gap-3 rounded-[1.5rem] bg-white/80 p-3 shadow-sm ring-1 ring-slate-100 sm:grid-cols-3"
-                    >
-                        <button
-                            v-for="option in dateOptions"
-                            :key="option.key"
-                            type="button"
-                            class="rounded-[1.15rem] px-4 py-3 text-left transition focus:outline-none focus:ring-4 focus:ring-sky-200"
-                            :class="
-                                selectedDay === option.key
-                                    ? 'bg-green-700 text-white shadow-lg shadow-slate-200'
-                                    : 'bg-slate-50 text-slate-700 hover:bg-sky-50'
-                            "
-                            @click="selectDay(option.key)"
+                      <div
+                            class="mt-5 grid gap-2 rounded-2xl border border-emerald-400/60 bg-gradient-to-r from-emerald-600 to-green-700
+                            p-1.5 shadow-lg shadow-emerald-200/60 sm:grid-cols-3"
+                            role="tablist"
+                            aria-label="Chọn ngày"
                         >
-                            <span class="block text-sm font-extrabold">
-                                {{ option.label }}
-                            </span>
-                            <span
-                                class="mt-1 block text-xs font-semibold"
+                            <button
+                                v-for="option in dateOptions"
+                                :key="option.key"
+                                type="button"
+                                role="tab"
+                                :aria-selected="selectedDay === option.key"
+                                class="flex min-h-[66px] flex-col items-start justify-center rounded-xl px-4 py-3
+                                text-left transition focus:outline-none focus:ring-4 focus:ring-emerald-200"
                                 :class="
                                     selectedDay === option.key
-                                        ? 'text-slate-200'
-                                        : 'text-slate-500'
+                                        ? 'bg-white text-emerald-700 shadow-md ring-2 ring-amber-300'
+                                        : 'text-white/90 hover:bg-white/15'
                                 "
+                                @click="selectDay(option.key)"
                             >
-                                {{ option.helper }}
-                            </span>
-                        </button>
-                    </div>
-
-                    <div
-                        class="mt-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"
-                    >
-                        <div>
-                            <p class="text-xs font-bold uppercase text-sky-700">
-                                Danh sách nhiệm vụ
-                            </p>
-                            <h2
-                                class="mt-1 text-2xl font-extrabold text-slate-900"
-                            >
-                                Việc cần làm
-                                {{ selectedOption.label.toLowerCase() }}
-                            </h2>
-                            <p
-                                class="mt-2 text-sm font-semibold text-slate-600"
-                            >
-                                {{ submitHint }}
-                            </p>
-                        </div>
-                        <div class="flex flex-wrap items-center gap-2">
-                            <p
-                                class="rounded-full bg-white/80 px-3 py-2 text-xs font-bold text-slate-600 shadow-sm"
-                            >
-                                {{ displayedProgress.completed }} đã chọn
-                            </p>
-                            <button
-                                v-if="canEditTasks"
-                                type="button"
-                                class="rounded-full bg-emerald-500 px-5 py-3 text-sm font-extrabold text-white shadow-lg shadow-emerald-200 transition hover:bg-emerald-600 focus:outline-none focus:ring-4 focus:ring-emerald-200 disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:bg-emerald-500"
-                                :disabled="submitDisabled"
-                                @click="requestSubmitDay"
-                                :class="submitDisabled ? '!cursor-not-allowed' : ''"
-                            >
-                                {{
-                                    childStore.loadingStates.submitDailyTasks
-                                        ? "Đang hoàn thành..."
-                                        : "Hoàn thành nhiệm vụ"
-                                }}
+                                <span class="block text-sm font-extrabold">{{ option.label }}</span>
+                                <span
+                                    class="mt-1 block text-xs font-semibold"
+                                    :class="selectedDay === option.key ? 'text-emerald-600' : 'text-emerald-100'"
+                                >
+                                    {{ option.helper }}
+                                </span>
                             </button>
                         </div>
-                    </div>
 
-                    <div
-                        v-if="dueReminders.length && canEditTasks"
-                        class="mt-4 rounded-[1.25rem] bg-amber-50 p-4 ring-1 ring-amber-100"
-                    >
-                        <p class="text-sm font-extrabold text-amber-900">
-                            Đến giờ làm {{ dueReminders.length }} nhiệm vụ rồi.
-                        </p>
-                        <p class="mt-1 text-sm font-semibold text-amber-800/80">
-                            {{ dueReminders.slice(0, 2).map((task) => `${task.reminder_time} · ${task.task.title}`).join(" · ") }}
-                        </p>
-                    </div>
-
-                    <div class="mt-4 grid gap-4 md:grid-cols-2">
-                        <TaskCard
-                            v-for="dailyTask in displayedTasks"
-                            :key="dailyTask.id"
-                            :daily-task="dailyTask"
-                            :busy="busyId === dailyTask.id"
-                            :readonly="isReadonly"
-                            :status-label="
-                                dailyTask.status === 'completed'
-                                    ? canEditTasks
-                                        ? 'Đã chọn'
-                                        : 'Hoàn thành'
-                                    : dailyTask.status === 'incomplete'
-                                      ? 'Chưa hoàn thành'
-                                    : isReadonly
-                                      ? 'Chỉ xem'
-                                      : ''
-                            "
-                            @toggle="toggleTask"
-                        />
-                    </div>
-                    <EmptyState
-                        v-if="!displayedTasks.length"
-                        class="mt-5"
-                        :title="`Chưa có nhiệm vụ ${selectedOption.label.toLowerCase()}`"
-                        message="Phụ huynh có thể thêm nhiệm vụ trong Parent Mode."
-                    />
-                </section>
-
-                <section class="mt-6 space-y-5">
-                    <div class="soft-panel rounded-[1.75rem] p-5">
-                        <div class="flex items-center justify-between gap-3">
-                            <h2 class="text-lg font-extrabold text-slate-900">
-                                Thành tựu
-                            </h2>
-                            <span
-                                class="rounded-full bg-sky-100 px-3 py-1 text-xs font-extrabold text-sky-700"
-                                >{{ dashboard.achievements.length }}</span
-                            >
-                        </div>
-                        <div class="mt-4 grid gap-3">
-                            <div
-                                v-for="achievement in dashboard.achievements"
-                                :key="achievement.id"
-                                class="rounded-2xl bg-white/80 p-4 ring-1 ring-slate-100"
-                            >
-                                <p class="font-bold text-slate-900">
-                                    {{ achievement.icon }}
-                                    {{ achievement.title }}
-                                </p>
-                                <p
-                                    class="mt-1 text-sm font-medium leading-6 text-slate-600"
-                                >
-                                    {{ achievement.description }}
+                        <!-- Tiêu đề danh sách + nút hoàn thành -->
+                        <div class="mt-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                            <div>
+                                <span class="inline-flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1 text-xs font-extrabold text-sky-600 shadow-sm">
+                                    <Star class="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                                    Danh sách nhiệm vụ
+                                </span>
+                                <h2 class="mt-2 text-2xl font-black text-[#14458f] sm:text-3xl">
+                                    Việc cần làm {{ selectedOption.label.toLowerCase() }}
+                                </h2>
+                                <p class="mt-2 max-w-xl text-sm font-medium leading-6 text-slate-600">
+                                    {{ submitHint }}
                                 </p>
                             </div>
-                            <p
-                                v-if="!dashboard.achievements.length"
-                                class="text-sm font-medium text-slate-600"
-                            >
-                                Hoàn thành nhiệm vụ đầu tiên để mở khóa.
-                            </p>
+                            <div class="flex flex-wrap items-center gap-3">
+                                <p class="rounded-full border border-sky-100 bg-white/90 px-4 py-2 text-xs font-extrabold text-sky-700 shadow-sm">
+                                    {{ displayedProgress.completed }} đã chọn
+                                </p>
+                                <button
+                                    v-if="canEditTasks"
+                                    type="button"
+                                    class="inline-flex min-h-[48px] items-center justify-center rounded-full
+                                    bg-gradient-to-r from-[#2d9bf0] to-[#0879e8] px-6 text-sm font-extrabold text-white
+                                    shadow-lg shadow-sky-300/50 transition duration-200 hover:-translate-y-0.5
+                                    focus:outline-none focus:ring-4 focus:ring-sky-200
+                                    disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
+                                    :disabled="submitDisabled"
+                                    @click="requestSubmitDay"
+                                    :class="submitDisabled ? '!cursor-not-allowed' : ''"
+                                >
+                                    {{
+                                        childStore.loadingStates.submitDailyTasks
+                                            ? "Đang hoàn thành..."
+                                            : "Hoàn thành nhiệm vụ"
+                                    }}
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                </section>
-            </div>
-        </section>
+
+                        <!-- Nhắc giờ -->
+                        <div
+                            v-if="dueReminders.length && canEditTasks"
+                            class="mt-4 flex items-start gap-3 rounded-2xl border border-amber-100 bg-amber-50/95 p-4 shadow-sm"
+                        >
+                            <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-amber-100 text-amber-500">
+                                <BellRing class="h-5 w-5" />
+                            </span>
+                            <div>
+                                <p class="text-sm font-extrabold text-amber-900">
+                                    Đến giờ làm {{ dueReminders.length }} nhiệm vụ rồi.
+                                </p>
+                                <p class="mt-1 text-sm font-semibold text-amber-800/80">
+                                    {{ dueReminders.slice(0, 2).map((task) => `${task.reminder_time} · ${task.task.title}`).join(" · ") }}
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Danh sách task -->
+                        <div class="mt-5 grid gap-4 md:grid-cols-2">
+                            <TaskCard
+                                v-for="dailyTask in displayedTasks"
+                                :key="dailyTask.id"
+                                :daily-task="dailyTask"
+                                :busy="busyId === dailyTask.id"
+                                :readonly="isReadonly"
+                                :status-label="
+                                    dailyTask.status === 'completed'
+                                        ? canEditTasks
+                                            ? 'Đã chọn'
+                                            : 'Hoàn thành'
+                                        : dailyTask.status === 'incomplete'
+                                          ? 'Chưa hoàn thành'
+                                        : isReadonly
+                                          ? 'Chỉ xem'
+                                          : ''
+                                "
+                                @toggle="toggleTask"
+                            />
+                        </div>
+                        <EmptyState
+                            v-if="!displayedTasks.length"
+                            class="mt-5"
+                            :title="`Chưa có nhiệm vụ ${selectedOption.label.toLowerCase()}`"
+                            message="Phụ huynh có thể thêm nhiệm vụ trong Parent Mode."
+                        />
+                    </section>
+                </div>
+            </section>
+        </div>
 
         <RewardsSheet
             :open="showRewards"
@@ -586,3 +522,11 @@ onMounted(load);
         />
     </ChildLayout>
 </template>
+
+<style scoped>
+.child-page button:focus-visible,
+.child-page a:focus-visible {
+    outline: 3px solid rgba(37, 136, 232, .5);
+    outline-offset: 2px;
+}
+</style>

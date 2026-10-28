@@ -9,10 +9,10 @@ import ParentTaskHistory from '../pages/Parent/ParentTaskHistory.vue'
 import ParentTasks from '../pages/Parent/ParentTasks.vue'
 import ParentRewards from '../pages/Parent/ParentRewards.vue'
 import ParentRewardHistory from '../pages/Parent/ParentRewardHistory.vue'
-import ParentAchievements from '../pages/Parent/ParentAchievements.vue'
 import ParentStatistics from '../pages/Parent/ParentStatistics.vue'
 import ParentAccessPin from '../pages/Parent/ParentAccessPin.vue'
 import AdminUsers from '../pages/Admin/AdminUsers.vue'
+import AdminCategories from '../pages/Admin/AdminCategories.vue'
 import FamilyHome from '../pages/Family/FamilyHome.vue'
 import { parentService } from '../services/parent.service'
 
@@ -29,10 +29,10 @@ const router = createRouter({
         { path: '/parent/schedules', redirect: '/parent/task-calendar' },
         { path: '/parent/rewards', component: ParentRewards, meta: { requiresParent: true, requiresParentAccess: true } },
         { path: '/parent/reward-history', component: ParentRewardHistory, meta: { requiresParent: true, requiresParentAccess: true } },
-        { path: '/parent/achievements', component: ParentAchievements, meta: { requiresParent: true, requiresParentAccess: true } },
         { path: '/parent/statistics', component: ParentStatistics, meta: { requiresParent: true, requiresParentAccess: true } },
         { path: '/parent/access-pin', component: ParentAccessPin, meta: { requiresParent: true } },
         { path: '/admin', component: AdminUsers, meta: { requiresAdmin: true } },
+        { path: '/admin/categories', component: AdminCategories, meta: { requiresAdmin: true } },
         { path: '/family', component: FamilyHome, meta: { requiresParent: true } },
         { path: '/settings', redirect: '/parent' },
     ],

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Models\Family;
+use App\Models\TaskCategory;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -33,7 +34,7 @@ class AdminController extends Controller
             ]);
             $parent = User::create([
                 'family_id' => $family->id,
-                'name' => $data['parent_name'] ?? 'Phụ huynh '.$family->name,
+                'name' => $data['parent_name'] ?? 'Phụ huynh',
                 'email' => null,
                 'password' => null,
                 'role' => UserRole::PARENT,
@@ -64,6 +65,7 @@ class AdminController extends Controller
             'family_id' => ['nullable', 'exists:families,id'],
         ]);
         $user->update($data);
+
         return $user->load('family:id,name,code');
     }
 
@@ -95,7 +97,6 @@ class AdminController extends Controller
             $userIds = $family->users()->withoutGlobalScopes()->pluck('id');
             $deletedUsers = $userIds->count();
 
-            DB::table('user_achievements')->whereIn('user_id', $userIds)->delete();
             DB::table('daily_task_submissions')->where('family_id', $family->id)->delete();
             DB::table('daily_task_drafts')->where('family_id', $family->id)->delete();
             DB::table('point_transactions')->where('family_id', $family->id)->delete();
@@ -103,12 +104,59 @@ class AdminController extends Controller
             DB::table('daily_tasks')->where('family_id', $family->id)->delete();
             DB::table('tasks')->where('family_id', $family->id)->delete();
             DB::table('rewards')->where('family_id', $family->id)->delete();
-            DB::table('achievements')->where('family_id', $family->id)->delete();
             DB::table('task_categories')->where('family_id', $family->id)->delete();
             DB::table('users')->whereIn('id', $userIds)->delete();
             $family->delete();
         });
 
         return ['message' => 'Đã xóa family và dữ liệu người dùng liên quan.', 'deleted_users' => $deletedUsers];
+    }
+
+    public function categories()
+    {
+        return TaskCategory::query()
+            ->whereNull('family_id')
+            ->orderBy('name')
+            ->get();
+    }
+
+    public function storeCategory(Request $request)
+    {
+        $data = $request->validate($this->categoryRules());
+        $category = TaskCategory::create($data);
+
+        return response()->json($category, 201);
+    }
+
+    public function updateCategory(Request $request, int $category)
+    {
+        $category = TaskCategory::query()->whereNull('family_id')->findOrFail($category);
+        $data = $request->validate($this->categoryRules($category->id));
+        $category->update($data);
+
+        return $category->refresh();
+    }
+
+    public function destroyCategory(int $category)
+    {
+        $category = TaskCategory::query()->whereNull('family_id')->findOrFail($category);
+        $category->delete();
+
+        return response()->noContent();
+    }
+
+    private function categoryRules(?int $ignoreId = null): array
+    {
+        $nameRule = Rule::unique('task_categories', 'name')->whereNull('family_id');
+
+        if ($ignoreId !== null) {
+            $nameRule->ignore($ignoreId);
+        }
+
+        return [
+            'name' => ['required', 'string', 'max:100', $nameRule],
+            'icon' => ['nullable', 'string', 'max:20'],
+            'color' => ['required', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+        ];
     }
 }

@@ -22,7 +22,7 @@ const form = reactive({
     points: 10,
     is_active: true,
 });
-const errors = reactive({ title: "", icon: "", points: "", category_id: "" });
+const errors = reactive({ title: "", points: "", category_id: "" });
 const filteredTasks = computed(() => {
     const query = searchQuery.value.trim().toLocaleLowerCase("vi-VN");
 
@@ -36,7 +36,7 @@ const filteredTasks = computed(() => {
 });
 
 function clearErrors() {
-    Object.assign(errors, { title: "", icon: "", points: "", category_id: "" });
+    Object.assign(errors, { title: "", points: "", category_id: "" });
 }
 
 function validateForm() {
@@ -44,10 +44,6 @@ function validateForm() {
 
     if (!form.title.trim()) {
         errors.title = "Vui lòng nhập tên nhiệm vụ.";
-    }
-
-    if (!String(form.icon).trim()) {
-        errors.icon = "Vui lòng nhập icon.";
     }
 
     if (!form.category_id) {
@@ -137,8 +133,6 @@ onMounted(async () => {
                         /><BaseInput
                             v-model="form.icon"
                             label="Icon"
-                            :error="errors.icon"
-                            @update:modelValue="errors.icon = ''"
                         />
                     </div>
                     <div class="mt-4 grid grid-cols-2 gap-3">

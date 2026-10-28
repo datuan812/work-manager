@@ -112,7 +112,7 @@ onMounted(load)
                         <p class="mt-1 text-sm font-semibold text-slate-500">Hệ thống tự tạo luôn một tài khoản parent để đăng nhập bằng mã này.</p>
                     </div>
                     <form class="flex flex-wrap gap-2" @submit.prevent="createFamily">
-                        <input v-model="familyForm.name" class="home-input !mt-0 !min-h-11 !w-48" placeholder="Tên gia đình" required />
+                        <label class="relative block"><span class="sr-only">Tên gia đình</span><input v-model="familyForm.name" class="home-input !mt-0 !min-h-11 !w-48" placeholder="Tên gia đình" required /><span class="absolute -right-1 -top-2 text-base font-black leading-none text-red-500" aria-hidden="true">*</span></label>
                         <input v-model="familyForm.parent_name" class="home-input !mt-0 !min-h-11 !w-48" placeholder="Tên phụ huynh" />
                         <input v-model="familyForm.code" class="home-input !mt-0 !min-h-11 !w-40 uppercase" placeholder="Mã tùy chọn" />
                         <button class="rounded-xl bg-sky-600 px-4 py-2 text-sm font-black text-white" type="submit">Tạo family</button>
@@ -122,8 +122,8 @@ onMounted(load)
                 <div class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                     <div v-for="family in families" :key="family.id" class="rounded-xl bg-slate-50 p-4 ring-1 ring-slate-100">
                         <form v-if="editingFamily.id === family.id" class="mb-3 space-y-2" @submit.prevent="saveFamily">
-                            <input v-model="editingFamily.name" class="home-input !mt-0 !min-h-10" placeholder="Tên gia đình" required />
-                            <input v-model="editingFamily.code" class="home-input !mt-0 !min-h-10 uppercase" placeholder="Mã gia đình" required />
+                            <label class="relative block"><span class="sr-only">Tên gia đình</span><input v-model="editingFamily.name" class="home-input !mt-0 !min-h-10" placeholder="Tên gia đình" required /><span class="absolute -right-1 -top-2 text-base font-black leading-none text-red-500" aria-hidden="true">*</span></label>
+                            <label class="relative block"><span class="sr-only">Mã gia đình</span><input v-model="editingFamily.code" class="home-input !mt-0 !min-h-10 uppercase" placeholder="Mã gia đình" required /><span class="absolute -right-1 -top-2 text-base font-black leading-none text-red-500" aria-hidden="true">*</span></label>
                             <p v-if="editingFamily.error" class="text-xs font-bold text-red-600">{{ editingFamily.error }}</p>
                             <div class="flex gap-2"><button class="rounded-lg bg-sky-600 px-3 py-2 text-xs font-black text-white" type="submit" :disabled="editingFamily.saving">Lưu</button><button class="rounded-lg px-3 py-2 text-xs font-black text-slate-600 ring-1 ring-slate-200" type="button" @click="cancelEditFamily">Hủy</button></div>
                         </form>

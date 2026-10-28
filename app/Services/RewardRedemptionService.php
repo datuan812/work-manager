@@ -24,6 +24,12 @@ class RewardRedemptionService
             $lockedChild = User::query()->lockForUpdate()->findOrFail($child->id);
             $lockedReward = Reward::query()->lockForUpdate()->findOrFail($reward->id);
 
+            if ($lockedReward->family_id !== $lockedChild->family_id) {
+                throw ValidationException::withMessages([
+                    'reward' => 'Phần thưởng không thuộc gia đình hiện tại.',
+                ]);
+            }
+
             if (! $lockedReward->is_active) {
                 throw ValidationException::withMessages(['reward' => 'Reward is not available.']);
             }

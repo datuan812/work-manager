@@ -248,14 +248,6 @@ class ChildController extends Controller
             ],
             'points' => $points->balance($user),
             'streak' => $streaks->currentStreak($user),
-            'achievements' => $user->achievements()->get()->map(fn ($achievement) => [
-                'id' => $achievement->id,
-                'code' => $achievement->code,
-                'title' => $achievement->title,
-                'description' => $achievement->description,
-                'icon' => $achievement->icon,
-                'unlocked_at' => $achievement->pivot->unlocked_at,
-            ]),
         ];
     }
 
@@ -310,20 +302,6 @@ class ChildController extends Controller
             'streak' => $streaks->currentStreak($user),
             'completed_tasks' => $user->dailyTasks()->where('status', DailyTaskStatus::COMPLETED->value)->count(),
         ];
-    }
-
-    public function achievements(User $user)
-    {
-        abort_unless($user->isChild(), 404);
-
-        return $user->achievements()->get()->map(fn ($achievement) => [
-            'id' => $achievement->id,
-            'code' => $achievement->code,
-            'title' => $achievement->title,
-            'description' => $achievement->description,
-            'icon' => $achievement->icon,
-            'unlocked_at' => $achievement->pivot->unlocked_at,
-        ]);
     }
 
     public function rewards(User $user, PointService $points)

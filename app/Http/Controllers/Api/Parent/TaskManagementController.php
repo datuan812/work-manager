@@ -15,7 +15,7 @@ class TaskManagementController extends Controller
     {
         return [
             'tasks' => Task::query()->with(['user:id,name,role,avatar', 'category', 'schedule'])->whereNull('user_id')->latest()->get(),
-            'categories' => TaskCategory::query()->orderBy('sort_order')->get(),
+            'categories' => TaskCategory::query()->orderBy('name')->get(),
         ];
     }
 

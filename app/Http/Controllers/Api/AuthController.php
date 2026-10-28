@@ -84,6 +84,7 @@ class AuthController extends Controller
             'avatar' => $user->avatar,
             'family_id' => $user->family_id,
             'family_code' => $user->family?->code,
+            'family_name' => $user->family?->name,
         ];
     }
 }

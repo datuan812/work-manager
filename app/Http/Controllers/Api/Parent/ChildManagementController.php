@@ -60,7 +60,7 @@ class ChildManagementController extends Controller
         return [
             'name' => [$creating ? 'required' : 'sometimes', 'string', 'max:255'],
             'avatar_file' => ['nullable', 'image', 'max:2048'],
-            'date_of_birth' => ['nullable', 'date'],
+            'date_of_birth' => ['nullable', 'date_format:Y-m-d'],
             'access_pin' => [$creating ? 'required' : 'nullable', 'digits_between:4,6'],
             'is_active' => ['sometimes', 'boolean'],
         ];

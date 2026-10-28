@@ -300,7 +300,10 @@ class ParentController extends Controller
 
         return [
             'children_count' => $children->count(),
-            'active_tasks' => Task::query()->where('is_active', true)->count(),
+            'active_tasks' => Task::query()
+                ->whereNull('user_id')
+                ->where('is_active', true)
+                ->count(),
             'completed_today' => (int) ($todayStatusRows[DailyTaskStatus::COMPLETED->value] ?? 0),
             'missed_today' => (int) ($todayStatusRows[DailyTaskStatus::PENDING->value] ?? 0),
             'incomplete_today' => (int) ($todayStatusRows[DailyTaskStatus::INCOMPLETE->value] ?? 0),
