@@ -17,7 +17,7 @@ class DailyTaskGenerator
             ->where('is_active', true)
             ->whereHas('schedule')
             ->get()
-            ->each(function (Task $task) use ($date): void {
+            ->each(function (Task $task) use ($child, $date): void {
                 if (! $task->schedule?->occursOn($date)) {
                     return;
                 }

@@ -116,16 +116,22 @@ class TaskCalendarController extends Controller
 
                 foreach ($tasks as $task) {
                     $childTask = $this->taskForChild($task, $userId);
+                    $scheduled = DailyTask::query()->where('user_id', $userId)->whereDate('date', $date)
+                        ->whereHas('task', fn ($query) => $query->where('template_task_id', $task->id))
+                        ->orderByRaw('CASE WHEN task_id = ? THEN 0 ELSE 1 END', [$childTask->id])->first();
 
-                    DailyTask::query()->updateOrCreate(
-                        ['task_id' => $childTask->id, 'date' => $date],
-                        [
-                            'family_id' => $childTask->family_id,
-                            'user_id' => $childTask->user_id,
-                            'reminder_time' => $data['reminder_time'] ?? null,
-                            'status' => DailyTaskStatus::PENDING->value,
-                        ],
-                    );
+                    $attributes = [
+                        'task_id' => $childTask->id,
+                        'family_id' => $childTask->family_id,
+                        'user_id' => $childTask->user_id,
+                        'reminder_time' => $data['reminder_time'] ?? null,
+                        'status' => DailyTaskStatus::PENDING,
+                    ];
+                    if ($scheduled) {
+                        $scheduled->update($attributes);
+                    } else {
+                        $childTask->dailyTasks()->updateOrCreate(['date' => $date], $attributes);
+                    }
                 }
             }
         }
@@ -165,20 +171,21 @@ class TaskCalendarController extends Controller
 
     private function taskForChild(Task $template, int $userId): Task
     {
-        return Task::query()->firstOrCreate(
-            [
-                'user_id' => $userId,
-                'template_task_id' => $template->id,
-                'category_id' => $template->category_id,
-                'title' => $template->title,
-                'icon' => $template->icon,
-                'points' => $template->points,
-                'is_active' => true,
-                'family_id' => $template->family_id,
-            ],
-            [
-                'description' => $template->description,
-            ],
-        );
+        $attributes = [
+            'user_id' => $userId,
+            'template_task_id' => $template->id,
+            'category_id' => $template->category_id,
+            'title' => $template->title,
+            'icon' => $template->icon,
+            'points' => $template->points,
+            'is_active' => true,
+            'family_id' => $template->family_id,
+            'description' => $template->description,
+        ];
+
+        $copy = Task::query()->where($attributes)->get()
+            ->first(fn (Task $task): bool => ($task->steps ?? []) === ($template->steps ?? []));
+
+        return $copy ?? Task::create([...$attributes, 'steps' => $template->steps]);
     }
 }

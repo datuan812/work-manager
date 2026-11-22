@@ -12,6 +12,17 @@ use App\Models\Concerns\BelongsToFamily;
 class DailyTask extends Model
 {
     use BelongsToFamily;
+
+    protected static function booted(): void
+    {
+        static::created(function (DailyTask $task): void {
+            if ($task->family_id !== null) {
+                Family::query()->whereKey($task->family_id)->whereNull('first_task_assigned_at')
+                    ->update(['first_task_assigned_at' => $task->created_at]);
+            }
+        });
+    }
+
     protected function casts(): array
     {
         return [

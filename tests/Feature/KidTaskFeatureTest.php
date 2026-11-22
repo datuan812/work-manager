@@ -7,6 +7,7 @@ use App\Enums\DailyTaskStatus;
 use App\Enums\RepeatType;
 use App\Enums\UserRole;
 use App\Models\DailyTask;
+use App\Models\Family;
 use App\Models\Reward;
 use App\Models\Task;
 use App\Models\TaskCategory;
@@ -87,9 +88,11 @@ class KidTaskFeatureTest extends TestCase
     public function test_task_calendar_assigns_templates_to_child_task_copies(): void
     {
         $parent = $this->parent();
-        $child = User::create(['name' => 'Minh', 'role' => UserRole::CHILD, 'child_pin' => Hash::make('1234')]);
+        $family = $this->family();
+        $child = User::create(['family_id' => $family->id, 'name' => 'Minh', 'role' => UserRole::CHILD, 'child_pin' => Hash::make('1234')]);
         $category = TaskCategory::create(['name' => 'Study']);
         $template = Task::create([
+            'family_id' => $family->id,
             'user_id' => null,
             'category_id' => $category->id,
             'title' => 'Read',
@@ -166,7 +169,7 @@ class KidTaskFeatureTest extends TestCase
     {
         [$child] = $this->scheduledTask();
         $parent = $this->parent();
-        $reward = Reward::create(['title' => 'Ice cream', 'required_points' => 10, 'is_active' => true]);
+        $reward = Reward::create(['family_id' => $child->family_id, 'title' => 'Ice cream', 'required_points' => 10, 'is_active' => true]);
 
         $this->actingAs($parent)->postJson("/api/children/{$child->id}/rewards/{$reward->id}/redeem")
             ->assertUnprocessable();
@@ -197,7 +200,7 @@ class KidTaskFeatureTest extends TestCase
     {
         [$child] = $this->scheduledTask();
         $parent = $this->parent();
-        $reward = Reward::create(['title' => 'Ice cream', 'required_points' => 10, 'is_active' => true]);
+        $reward = Reward::create(['family_id' => $child->family_id, 'title' => 'Ice cream', 'required_points' => 10, 'is_active' => true]);
 
         app(DailyTaskGenerator::class)->generateForChild($child, today());
         app(CompleteDailyTaskAction::class)->complete($child->dailyTasks()->first());
@@ -216,18 +219,22 @@ class KidTaskFeatureTest extends TestCase
     private function parent(): User
     {
         return User::create([
+            'family_id' => $this->family()->id,
             'name' => 'Parent',
             'email' => 'test-parent-'.uniqid().'@example.com',
             'password' => Hash::make('password'),
             'role' => UserRole::PARENT,
+            'parent_access_pin_enabled' => false,
         ]);
     }
 
     private function scheduledTask(): array
     {
-        $child = User::create(['name' => 'Minh', 'role' => UserRole::CHILD, 'child_pin' => Hash::make('1234')]);
+        $family = $this->family();
+        $child = User::create(['family_id' => $family->id, 'name' => 'Minh', 'role' => UserRole::CHILD, 'child_pin' => Hash::make('1234')]);
         $category = TaskCategory::create(['name' => 'Study', 'icon' => '📚']);
         $task = Task::create([
+            'family_id' => $family->id,
             'user_id' => $child->id,
             'category_id' => $category->id,
             'title' => 'Read',
@@ -240,5 +247,13 @@ class KidTaskFeatureTest extends TestCase
         ]);
 
         return [$child, $task];
+    }
+
+    private function family(): Family
+    {
+        return Family::firstOrCreate(
+            ['code' => 'TESTFAMILY'],
+            ['name' => 'Gia đình kiểm thử', 'is_active' => true],
+        );
     }
 }

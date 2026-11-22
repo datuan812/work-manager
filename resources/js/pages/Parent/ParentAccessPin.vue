@@ -5,7 +5,7 @@ import ParentLayout from '../../layouts/ParentLayout.vue'
 import { parentService } from '../../services/parent.service'
 
 const router = useRouter()
-const form = reactive({ pin: '', confirmation: '' })
+const form = reactive({ pin: '', confirmation: '', currentPin: '' })
 const state = reactive({ hasPin: false, enabled: true, loading: false, toggling: false, error: '', success: '' })
 
 async function load() {
@@ -19,8 +19,9 @@ async function toggleAccessPin() {
     state.success = ''
     state.toggling = true
     try {
-        const data = await parentService.toggleAccessPin(!state.enabled)
+        const data = await parentService.toggleAccessPin(!state.enabled, form.currentPin)
         state.enabled = data.enabled
+        form.currentPin = ''
         state.success = state.enabled ? 'Đã bật yêu cầu mã.' : 'Đã tắt yêu cầu mã.'
     } catch (error) {
         state.error = error.message
@@ -43,10 +44,11 @@ async function save() {
 
     state.loading = true
     try {
-        await parentService.setAccessPin(form.pin)
+        await parentService.setAccessPin(form.pin, form.currentPin)
         state.hasPin = true
         form.pin = ''
         form.confirmation = ''
+        form.currentPin = ''
         state.success = 'Đã lưu mã khu vực phụ huynh.'
     } catch (error) {
         state.error = error.message
@@ -74,6 +76,10 @@ onMounted(load)
                     </div>
                 </div>
 
+                <label v-if="state.hasPin" class="mt-6 block">
+                    <span class="mb-1 block text-xs font-black uppercase text-slate-500">Mã hiện tại (để đổi, bật hoặc tắt mã)</span>
+                    <input v-model="form.currentPin" class="home-input" type="password" inputmode="numeric" maxlength="6" autocomplete="current-password" />
+                </label>
                 <div class="mt-6 flex items-center justify-between gap-4 rounded-2xl bg-slate-50 p-4">
                     <div>
                         <p class="font-black text-slate-900">{{ state.enabled ? 'Đang bật mã bảo vệ' : 'Đang tắt mã bảo vệ' }}</p>

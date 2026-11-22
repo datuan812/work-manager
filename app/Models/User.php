@@ -20,6 +20,8 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
+    protected $attributes = ['is_active' => true, 'parent_access_pin_enabled' => true];
+
     protected static function booted(): void
     {
         static::addGlobalScope('family', function (Builder $query): void {

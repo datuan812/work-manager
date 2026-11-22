@@ -5,6 +5,7 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 use App\Http\Middleware\EnsureChildAccess;
+use App\Http\Middleware\EnsureFamilySession;
 use App\Http\Middleware\EnsureParent;
 use App\Http\Middleware\EnsureAdmin;
 use App\Http\Middleware\EnsureParentAccess;
@@ -21,7 +22,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'parent' => EnsureParent::class,
             'admin' => EnsureAdmin::class,
             'parent.access' => EnsureParentAccess::class,
+            'family.session' => EnsureFamilySession::class,
         ]);
+        $middleware->prependToPriorityList(\Illuminate\Routing\Middleware\SubstituteBindings::class, EnsureFamilySession::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

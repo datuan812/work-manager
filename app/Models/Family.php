@@ -11,7 +11,7 @@ class Family extends Model
 
     protected function casts(): array
     {
-        return ['is_active' => 'boolean'];
+        return ['is_active' => 'boolean', 'access_version' => 'integer'];
     }
 
     public function users(): HasMany

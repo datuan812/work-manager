@@ -20,6 +20,7 @@ const form = reactive({
     description: "",
     icon: "⭐",
     points: 10,
+    stepsText: "",
     is_active: true,
 });
 const errors = reactive({ title: "", points: "", category_id: "" });
@@ -68,12 +69,22 @@ function reset() {
         description: "",
         icon: "",
         points: 0,
+        stepsText: "",
         is_active: true,
     });
     clearErrors();
 }
 function edit(task) {
-    Object.assign(form, { ...task, category_id: task.category_id || "" });
+    Object.assign(form, {
+        id: task.id,
+        title: task.title,
+        description: task.description,
+        icon: task.icon,
+        points: task.points,
+        is_active: task.is_active,
+        category_id: task.category_id || "",
+        stepsText: (task.steps ?? []).join("\n"),
+    });
     clearErrors();
 }
 async function save() {
@@ -83,13 +94,17 @@ async function save() {
     }
 
     const isEditing = Boolean(form.id);
-    const { schedule, user, ...payload } = form;
-    await parent.saveTask({
-        ...payload,
-        category_id: form.category_id,
-    });
-    toast.show(isEditing ? "Cập nhật nhiệm vụ thành công." : "Thêm nhiệm vụ thành công.");
-    reset();
+    const { stepsText, ...payload } = form;
+    try {
+        await parent.saveTask({
+            ...payload,
+            steps: stepsText.split("\n").map((step) => step.trim()).filter(Boolean),
+        });
+        toast.show(isEditing ? "Cập nhật nhiệm vụ thành công." : "Thêm nhiệm vụ thành công.");
+        reset();
+    } catch (error) {
+        toast.show(error.message, "error");
+    }
 }
 function remove(id) {
     confirmDelete.id = id;
@@ -111,9 +126,12 @@ onMounted(async () => {
 
 <template>
     <ParentLayout>
-        <div>
-            <p class="admin-section-title">Kho nhiệm vụ</p>
-            <h1 class="mt-1 text-3xl font-bold">Danh sách nhiệm vụ</h1>
+        <div class="flex flex-wrap items-center justify-between gap-4">
+            <div>
+                <p class="admin-section-title">Kho nhiệm vụ</p>
+                <h1 class="mt-1 text-3xl font-bold">Danh sách nhiệm vụ</h1>
+            </div>
+            <RouterLink to="/parent/task-library" class="rounded-xl bg-sky-600 px-4 py-3 text-sm font-bold text-white">Mở thư viện mẫu</RouterLink>
         </div>
 
         <div class="mt-6 grid gap-5 xl:grid-cols-[410px_1fr]">
@@ -163,6 +181,14 @@ onMounted(async () => {
                             </select><span v-if="errors.category_id" class="mt-1 block text-xs font-semibold text-red-600">{{ errors.category_id }}</span></label
                         >
                     </div>
+                    <label class="mt-4 block text-sm font-bold">
+                        Mô tả
+                        <textarea v-model="form.description" class="home-input" rows="2" />
+                    </label>
+                    <label class="mt-4 block text-sm font-bold">
+                        Các bước thực hiện
+                        <textarea v-model="form.stepsText" class="home-input" rows="3" placeholder="Mỗi dòng một bước" />
+                    </label>
                     <label
                         class="mt-4 flex min-h-11 items-center gap-2 text-sm font-bold"
                         ><input v-model="form.is_active" type="checkbox" />

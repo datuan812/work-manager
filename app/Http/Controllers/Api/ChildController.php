@@ -42,8 +42,11 @@ class ChildController extends Controller
 
     public function unlock(Request $request, User $user)
     {
+        abort_if($request->user()?->isAdmin(), 403);
         abort_unless($user->isChild() && $user->is_active, 404);
         abort_unless(session()->get('family_id') === null || session()->get('family_id') === $user->family_id, 404);
+        $family = $user->family;
+        abort_unless($family?->is_active, 404);
 
         $validated = $request->validate([
             'pin' => ['required', 'digits_between:4,6'],
@@ -56,7 +59,7 @@ class ChildController extends Controller
         }
 
         $request->session()->put("child_access.{$user->id}", true);
-        $request->session()->put('family_id', $user->family_id);
+        $request->session()->put(['family_id' => $family->id, 'family_access_version' => $family->access_version]);
 
         return ['child' => $this->childPayload($user)];
     }
@@ -372,6 +375,7 @@ class ChildController extends Controller
                 'id' => $dailyTask->task->id,
                 'title' => $dailyTask->task->title,
                 'description' => $dailyTask->task->description,
+                'steps' => $dailyTask->task->steps,
                 'icon' => $dailyTask->task->icon,
                 'points' => $dailyTask->task->points,
                 'category' => $dailyTask->task->category ? [

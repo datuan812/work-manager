@@ -21,6 +21,9 @@ export async function api(path, options = {}) {
     const data = await response.json().catch(() => ({}))
 
     if (!response.ok) {
+        if (response.status === 401 && path !== '/api/auth/me' && window.location.pathname !== '/') {
+            window.location.assign('/')
+        }
         const message = data.message || Object.values(data.errors ?? {})?.flat()?.[0] || 'Có lỗi xảy ra. Vui lòng thử lại.'
         throw new Error(message)
     }

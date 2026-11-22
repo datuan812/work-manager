@@ -13,6 +13,11 @@ import ParentStatistics from '../pages/Parent/ParentStatistics.vue'
 import ParentAccessPin from '../pages/Parent/ParentAccessPin.vue'
 import AdminUsers from '../pages/Admin/AdminUsers.vue'
 import AdminCategories from '../pages/Admin/AdminCategories.vue'
+import AdminDashboard from '../pages/Admin/AdminDashboard.vue'
+import AdminAuditLogs from '../pages/Admin/AdminAuditLogs.vue'
+import AdminTaskTemplates from '../pages/Admin/AdminTaskTemplates.vue'
+import ParentTaskLibrary from '../pages/Parent/ParentTaskLibrary.vue'
+import ResetParentPin from '../pages/Parent/ResetParentPin.vue'
 import FamilyHome from '../pages/Family/FamilyHome.vue'
 import { parentService } from '../services/parent.service'
 
@@ -24,6 +29,7 @@ const router = createRouter({
         { path: '/parent', component: ParentDashboard, meta: { requiresParent: true, requiresParentAccess: true } },
         { path: '/parent/children', component: ParentChildren, meta: { requiresParent: true, requiresParentAccess: true } },
         { path: '/parent/tasks', component: ParentTasks, meta: { requiresParent: true, requiresParentAccess: true } },
+        { path: '/parent/task-library', component: ParentTaskLibrary, meta: { requiresParent: true, requiresParentAccess: true } },
         { path: '/parent/task-calendar', component: ParentTaskCalendar, meta: { requiresParent: true, requiresParentAccess: true } },
         { path: '/parent/task-history', component: ParentTaskHistory, meta: { requiresParent: true, requiresParentAccess: true } },
         { path: '/parent/schedules', redirect: '/parent/task-calendar' },
@@ -33,6 +39,10 @@ const router = createRouter({
         { path: '/parent/access-pin', component: ParentAccessPin, meta: { requiresParent: true } },
         { path: '/admin', component: AdminUsers, meta: { requiresAdmin: true } },
         { path: '/admin/categories', component: AdminCategories, meta: { requiresAdmin: true } },
+        { path: '/admin/dashboard', component: AdminDashboard, meta: { requiresAdmin: true } },
+        { path: '/admin/task-templates', component: AdminTaskTemplates, meta: { requiresAdmin: true } },
+        { path: '/admin/audit-logs', component: AdminAuditLogs, meta: { requiresAdmin: true } },
+        { path: '/reset-parent-pin', component: ResetParentPin },
         { path: '/family', component: FamilyHome, meta: { requiresParent: true } },
         { path: '/settings', redirect: '/parent' },
     ],

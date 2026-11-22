@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Models\Family;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
@@ -31,9 +32,8 @@ class AuthController extends Controller
             throw ValidationException::withMessages(['family_code' => 'Mã gia đình không đúng hoặc gia đình chưa có tài khoản phụ huynh.']);
         }
 
-        Auth::login($parent, true);
-        $request->session()->regenerate();
-        $request->session()->put('family_id', $parent->family_id);
+        Auth::login($parent);
+        $this->initializeSession($request, $family);
 
         return ['user' => $this->userPayload($parent), 'csrf_token' => csrf_token()];
     }
@@ -45,14 +45,14 @@ class AuthController extends Controller
             'password' => ['required', 'string'],
         ]);
 
-        if (! Auth::attempt($credentials, true)) {
+        $credentials[] = fn ($query) => $query->withoutGlobalScope('family');
+        if (! Auth::attemptWhen($credentials, fn (User $user) => $user->is_active
+            && ($user->isAdmin() || ($user->isParent() && ($user->family_id === null || $user->family?->is_active))))) {
             throw ValidationException::withMessages(['email' => 'Thông tin đăng nhập không đúng.']);
         }
 
-        $request->session()->regenerate();
-        $request->session()->put('family_id', $request->user()->family_id);
-
-        abort_unless($request->user()->is_active && in_array($request->user()->role, [UserRole::PARENT, UserRole::ADMIN], true), 403);
+        $user = $request->user();
+        $this->initializeSession($request, $user->isParent() ? $user->family : null);
 
         return ['user' => $this->userPayload($request->user()), 'csrf_token' => csrf_token()];
     }
@@ -69,12 +69,23 @@ class AuthController extends Controller
 
     public function me(Request $request)
     {
-        abort_unless($request->user()?->isParent() || $request->user()?->isAdmin(), 403);
+        abort_unless($request->user()->is_active && ($request->user()->isParent() || $request->user()->isAdmin()), 403);
 
         return ['user' => $this->userPayload($request->user())];
     }
 
-    private function userPayload($user): array
+    private function initializeSession(Request $request, ?Family $family): void
+    {
+        $session = $request->session();
+        $session->forget(['family_id', 'family_access_version', 'family_activity_week', 'parent_access_granted', 'child_access']);
+        $session->regenerate();
+
+        if ($family) {
+            $session->put(['family_id' => $family->id, 'family_access_version' => $family->access_version]);
+        }
+    }
+
+    private function userPayload(User $user): array
     {
         return [
             'id' => $user->id,

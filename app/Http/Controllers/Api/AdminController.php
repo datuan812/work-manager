@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Api;
 
 use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
+use App\Models\AdminAuditLog;
 use App\Models\Family;
 use App\Models\TaskCategory;
 use App\Models\User;
+use App\Services\FamilySessionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -21,12 +23,12 @@ class AdminController extends Controller
             'code' => ['nullable', 'string', 'alpha_num', 'min:4', 'max:32', 'unique:families,code'],
         ]);
 
-        $code = strtoupper($data['code'] ?? 'GD'.strtoupper(substr(bin2hex(random_bytes(4)), 0, 6)));
+        $code = strtoupper($data['code'] ?? 'GD'.bin2hex(random_bytes(10)));
         while (Family::query()->where('code', $code)->exists()) {
-            $code = 'GD'.strtoupper(substr(bin2hex(random_bytes(4)), 0, 6));
+            $code = 'GD'.strtoupper(bin2hex(random_bytes(10)));
         }
 
-        $result = DB::transaction(function () use ($data, $code): array {
+        $result = DB::transaction(function () use ($request, $data, $code): array {
             $family = Family::create([
                 'name' => $data['name'],
                 'code' => $code,
@@ -40,6 +42,8 @@ class AdminController extends Controller
                 'role' => UserRole::PARENT,
                 'is_active' => true,
             ]);
+
+            AdminAuditLog::record($request->user(), 'family.created', $family);
 
             return [$family, $parent];
         });
@@ -64,9 +68,38 @@ class AdminController extends Controller
             'is_active' => ['sometimes', 'boolean'],
             'family_id' => ['nullable', 'exists:families,id'],
         ]);
-        $user->update($data);
+        DB::transaction(function () use ($request, $user, $data): void {
+            $user = User::withoutGlobalScope('family')->lockForUpdate()->findOrFail($user->id);
+            $before = $user->only(['role', 'is_active', 'family_id']);
+            $user->fill($data);
 
-        return $user->load('family:id,name,code');
+            foreach (['role', 'is_active', 'family_id'] as $field) {
+                if ($user->isDirty($field)) {
+                    $user->remember_token = null;
+                    DB::table('parent_pin_resets')->where('user_id', $user->id)->delete();
+                    break;
+                }
+            }
+
+            $user->save();
+            $actions = [
+                'role' => 'user.role_changed',
+                'is_active' => $user->is_active ? 'user.unlocked' : 'user.locked',
+                'family_id' => 'user.family_changed',
+                'name' => 'user.updated',
+            ];
+            foreach ($actions as $field => $action) {
+                if ($user->wasChanged($field)) {
+                    AdminAuditLog::record($request->user(), $action, $user, $field === 'name' ? [] : [
+                        'field' => $field,
+                        'before' => $before[$field],
+                        'after' => $user->{$field},
+                    ]);
+                }
+            }
+        });
+
+        return $user->refresh()->load('family:id,name,code');
     }
 
     public function families()
@@ -74,26 +107,38 @@ class AdminController extends Controller
         return Family::withCount('users')->latest()->get();
     }
 
-    public function updateFamily(Request $request, Family $family)
+    public function updateFamily(Request $request, Family $family, FamilySessionService $sessions)
     {
+        if (is_string($request->input('code'))) {
+            $request->merge(['code' => strtoupper(trim($request->input('code')))]);
+        }
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'code' => ['required', 'string', 'alpha_num', 'min:4', 'max:32', Rule::unique('families', 'code')->ignore($family)],
         ]);
 
-        $family->update([
-            'name' => $data['name'],
-            'code' => strtoupper(trim($data['code'])),
-        ]);
+        return DB::transaction(function () use ($request, $family, $data, $sessions) {
+            $family = Family::query()->lockForUpdate()->findOrFail($family->id);
+            $family->update($data);
+            $changes = $family->getChanges();
+            if (array_key_exists('code', $changes)) {
+                $sessions->revoke($family);
+                AdminAuditLog::record($request->user(), 'family.code_rotated', $family);
+            }
+            if (array_key_exists('name', $changes)) {
+                AdminAuditLog::record($request->user(), 'family.updated', $family);
+            }
 
-        return $family->loadCount('users');
+            return $family->loadCount('users');
+        });
     }
 
-    public function destroyFamily(Family $family)
+    public function destroyFamily(Request $request, Family $family)
     {
         $deletedUsers = 0;
 
-        DB::transaction(function () use ($family, &$deletedUsers): void {
+        DB::transaction(function () use ($request, $family, &$deletedUsers): void {
+            $family = Family::query()->lockForUpdate()->findOrFail($family->id);
             $userIds = $family->users()->withoutGlobalScopes()->pluck('id');
             $deletedUsers = $userIds->count();
 
@@ -106,6 +151,7 @@ class AdminController extends Controller
             DB::table('rewards')->where('family_id', $family->id)->delete();
             DB::table('task_categories')->where('family_id', $family->id)->delete();
             DB::table('users')->whereIn('id', $userIds)->delete();
+            AdminAuditLog::record($request->user(), 'family.deleted', $family, ['deleted_users' => $deletedUsers]);
             $family->delete();
         });
 
@@ -123,7 +169,12 @@ class AdminController extends Controller
     public function storeCategory(Request $request)
     {
         $data = $request->validate($this->categoryRules());
-        $category = TaskCategory::create($data);
+        $category = DB::transaction(function () use ($request, $data) {
+            $category = TaskCategory::create($data);
+            AdminAuditLog::record($request->user(), 'category.created', $category);
+
+            return $category;
+        });
 
         return response()->json($category, 201);
     }
@@ -132,15 +183,21 @@ class AdminController extends Controller
     {
         $category = TaskCategory::query()->whereNull('family_id')->findOrFail($category);
         $data = $request->validate($this->categoryRules($category->id));
-        $category->update($data);
+        DB::transaction(function () use ($request, $category, $data) {
+            $category->update($data);
+            AdminAuditLog::record($request->user(), 'category.updated', $category);
+        });
 
         return $category->refresh();
     }
 
-    public function destroyCategory(int $category)
+    public function destroyCategory(Request $request, int $category)
     {
         $category = TaskCategory::query()->whereNull('family_id')->findOrFail($category);
-        $category->delete();
+        DB::transaction(function () use ($request, $category) {
+            AdminAuditLog::record($request->user(), 'category.deleted', $category);
+            $category->delete();
+        });
 
         return response()->noContent();
     }

@@ -1,7 +1,8 @@
 <script setup>
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import ParentLayout from '../../layouts/ParentLayout.vue'
 import ConfirmDialog from '../../components/common/ConfirmDialog.vue'
+import FamilySupportPanel from '../../components/admin/FamilySupportPanel.vue'
 import { api } from '../../services/api.service'
 import { LockKeyhole, LockKeyholeOpen, SquarePen, Trash } from 'lucide-vue-next'
 
@@ -10,17 +11,29 @@ const families = ref([])
 const loading = ref(true)
 const familyForm = ref({ name: '', parent_name: '', code: '' })
 const familyError = ref('')
+const supportFamilyId = ref(null)
+const supportFamily = computed(() => families.value.find((family) => family.id === supportFamilyId.value))
 const confirmDelete = reactive({ show: false, family: null })
 const editingFamily = reactive({ id: null, name: '', code: '', saving: false, error: '' })
 
 async function load() {
-    const [userData, familyData] = await Promise.all([
-        api('/api/admin/users'),
-        api('/api/admin/families'),
-    ])
-    users.value = userData.data ?? []
-    families.value = familyData ?? []
-    loading.value = false
+    try {
+        const [userData, familyData] = await Promise.all([
+            api('/api/admin/users'),
+            api('/api/admin/families'),
+        ])
+        users.value = userData.data ?? []
+        families.value = familyData ?? []
+    } catch (error) {
+        familyError.value = error.message
+    } finally {
+        loading.value = false
+    }
+}
+
+function updateFamilyCard(updated) {
+    const index = families.value.findIndex((family) => family.id === updated.id)
+    if (index !== -1) families.value[index] = updated
 }
 
 async function createFamily() {
@@ -52,8 +65,7 @@ async function saveFamily() {
             method: 'PATCH',
             body: { name: editingFamily.name, code: editingFamily.code },
         })
-        const index = families.value.findIndex((item) => item.id === family.id)
-        if (index !== -1) families.value[index] = family
+        updateFamilyCard(family)
         cancelEditFamily()
     } catch (error) {
         editingFamily.error = error.message
@@ -124,6 +136,7 @@ onMounted(load)
                         <form v-if="editingFamily.id === family.id" class="mb-3 space-y-2" @submit.prevent="saveFamily">
                             <label class="relative block"><span class="sr-only">Tên gia đình</span><input v-model="editingFamily.name" class="home-input !mt-0 !min-h-10" placeholder="Tên gia đình" required /><span class="absolute -right-1 -top-2 text-base font-black leading-none text-red-500" aria-hidden="true">*</span></label>
                             <label class="relative block"><span class="sr-only">Mã gia đình</span><input v-model="editingFamily.code" class="home-input !mt-0 !min-h-10 uppercase" placeholder="Mã gia đình" required /><span class="absolute -right-1 -top-2 text-base font-black leading-none text-red-500" aria-hidden="true">*</span></label>
+                            <p v-if="editingFamily.code.trim().toUpperCase() !== family.code" class="text-xs text-amber-800">Đổi mã sẽ thu hồi các phiên đang đăng nhập của gia đình.</p>
                             <p v-if="editingFamily.error" class="text-xs font-bold text-red-600">{{ editingFamily.error }}</p>
                             <div class="flex gap-2"><button class="rounded-lg bg-sky-600 px-3 py-2 text-xs font-black text-white" type="submit" :disabled="editingFamily.saving">Lưu</button><button class="rounded-lg px-3 py-2 text-xs font-black text-slate-600 ring-1 ring-slate-200" type="button" @click="cancelEditFamily">Hủy</button></div>
                         </form>
@@ -134,10 +147,12 @@ onMounted(load)
                                 <button class="!text-xs font-black text-red-600" type="button" @click="requestDeleteFamily(family)"><Trash /></button>
                             </div>
                         </div>
-                        <p class="mt-1 text-lg font-black tracking-wider text-sky-700">{{ family.code }}</p>
+                        <p class="mt-1 break-all font-mono text-sm font-black text-sky-700">{{ family.code }}</p>
                         <p class="mt-1 text-xs font-semibold text-slate-500">{{ family.users_count }} tài khoản</p>
+                        <button type="button" class="mt-3 text-sm font-bold text-sky-700" :aria-expanded="supportFamilyId === family.id" @click="supportFamilyId = supportFamilyId === family.id ? null : family.id">Hỗ trợ tài khoản</button>
                     </div>
                 </div>
+                <FamilySupportPanel v-if="supportFamily" :key="supportFamily.id" :family="supportFamily" @close="supportFamilyId = null" @updated="updateFamilyCard" />
             </section>
 
             <div class="admin-card mt-8 overflow-x-auto">

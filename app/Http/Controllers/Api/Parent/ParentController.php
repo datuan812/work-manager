@@ -34,15 +34,18 @@ class ParentController extends Controller
             'pin' => ['required', 'digits_between:4,6'],
         ]);
 
+        $this->verifyCurrentPin($request);
         $request->user()->update(['parent_access_pin' => $validated['pin']]);
         $request->session()->put('parent_access_granted', true);
 
-        return ['has_pin' => true, 'enabled' => true, 'granted' => true];
+        return ['has_pin' => true, 'enabled' => $request->user()->parent_access_pin_enabled, 'granted' => true];
     }
 
     public function toggleAccessPin(Request $request)
     {
         $validated = $request->validate(['enabled' => ['required', 'boolean']]);
+        abort_unless($request->user()->parent_access_pin, 403);
+        $this->verifyCurrentPin($request);
         $request->user()->update(['parent_access_pin_enabled' => $validated['enabled']]);
 
         if (! $validated['enabled']) {
@@ -69,6 +72,19 @@ class ParentController extends Controller
         $request->session()->put('parent_access_granted', true);
 
         return ['granted' => true];
+    }
+
+    private function verifyCurrentPin(Request $request): void
+    {
+        $hash = $request->user()->parent_access_pin;
+        if ($hash === null) {
+            return;
+        }
+
+        $validated = $request->validate(['current_pin' => ['required', 'digits_between:4,6']]);
+        if (! Hash::check((string) $validated['current_pin'], $hash)) {
+            throw ValidationException::withMessages(['current_pin' => 'Mã phụ huynh hiện tại không đúng.']);
+        }
     }
 
     public function dashboard(PointService $points, StreakService $streaks)

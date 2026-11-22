@@ -70,6 +70,8 @@ class TaskManagementController extends Controller
             'category_id' => [$creating ? 'required' : 'sometimes', Rule::exists('task_categories', 'id')],
             'title' => [$creating ? 'required' : 'sometimes', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
+            'steps' => ['nullable', 'array', 'list', 'max:12'],
+            'steps.*' => ['required', 'string', 'max:200'],
             'icon' => ['nullable', 'string', 'max:20'],
             'points' => ['sometimes', 'integer', 'min:1', 'max:500'],
             'is_active' => ['sometimes', 'boolean'],

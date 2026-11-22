@@ -27,6 +27,10 @@ defineEmits(['toggle'])
                 {{ dailyTask.task.icon || dailyTask.task.category?.icon || '⭐' }}
             </span>
             <span class="mt-4 block text-xl font-bold leading-tight text-slate-950">{{ dailyTask.task.title }}</span>
+            <span v-if="dailyTask.task.description" class="mt-2 block break-words text-sm text-slate-600">{{ dailyTask.task.description }}</span>
+            <span v-if="dailyTask.task.steps?.length" class="mt-2 block space-y-1 text-sm text-slate-700">
+                <span v-for="(step, index) in dailyTask.task.steps" :key="index" class="block break-words">{{ index + 1 }}. {{ step }}</span>
+            </span>
             <span class="mt-2 inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-bold uppercase text-slate-500">
                 {{ statusLabel || (dailyTask.status === 'completed' ? 'Hoàn thành' : dailyTask.task.category?.name || 'Nhiệm vụ') }}
             </span>

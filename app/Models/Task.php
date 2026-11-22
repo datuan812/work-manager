@@ -9,13 +9,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use App\Models\Concerns\BelongsToFamily;
 
-#[Fillable(['family_id', 'user_id', 'template_task_id', 'category_id', 'title', 'description', 'icon', 'points', 'is_active'])]
+#[Fillable(['family_id', 'user_id', 'template_task_id', 'shared_task_template_id', 'category_id', 'title', 'description', 'icon', 'points', 'steps', 'is_active'])]
 class Task extends Model
 {
     use BelongsToFamily;
     protected function casts(): array
     {
-        return ['is_active' => 'boolean', 'points' => 'integer'];
+        return ['is_active' => 'boolean', 'points' => 'integer', 'steps' => 'array'];
     }
 
     public function user(): BelongsTo

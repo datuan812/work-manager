@@ -16,13 +16,16 @@ class EnsureChildAccess
 
         abort_unless($child && (session()->get('family_id') === null || session()->get('family_id') === $child->family_id), 404);
 
-        if ($request->user()?->isParent()) {
-            abort_unless($child?->isChild() && $child->is_active && $request->user()->isInFamily($child), 404);
-            return $next($request);
+        $user = $request->user();
+        if ($user?->isParent()) {
+            abort_unless($user->isInFamily($child), 404);
         }
 
         abort_unless($child?->isChild() && $child->is_active, 404);
-        abort_unless($request->session()->get($this->sessionKey($child)), 403);
+        $parentHasAccess = $user?->isParent() && (
+            ! $user->parent_access_pin_enabled || $request->session()->get('parent_access_granted') === true
+        );
+        abort_unless($parentHasAccess || $request->session()->get($this->sessionKey($child)), 403);
 
         return $next($request);
     }
